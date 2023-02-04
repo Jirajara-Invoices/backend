@@ -1,10 +1,10 @@
-import compress from '@fastify/compress';
-import cors from '@fastify/cors';
-import helmet from '@fastify/helmet';
-import rateLimit from '@fastify/rate-limit';
-import Fastify from 'fastify';
-import { ApolloServer, BaseContext } from '@apollo/server';
-import fastifyApollo, { fastifyApolloDrainPlugin } from '@as-integrations/fastify';
+import compress from "@fastify/compress";
+import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
+import Fastify from "fastify";
+import { ApolloServer, BaseContext } from "@apollo/server";
+import fastifyApollo, { fastifyApolloDrainPlugin } from "@as-integrations/fastify";
 
 // A schema is a collection of type definitions (hence "typeDefs")
 // that together define the "shape" of queries that are executed against
@@ -29,12 +29,12 @@ type Query {
 
 const books = [
   {
-    title: 'The Awakening',
-    author: 'Kate Chopin',
+    title: "The Awakening",
+    author: "Kate Chopin",
   },
   {
-    title: 'City of Glass',
-    author: 'Paul Auster',
+    title: "City of Glass",
+    author: "Paul Auster",
   },
 ];
 
@@ -66,7 +66,7 @@ await fastify.register(fastifyApollo(apollo));
 
 const url = await fastify.listen({
   port: 4000,
-  host: '0.0.0.0',
+  host: "0.0.0.0",
 });
 
 console.log(`🚀  Server ready at: ${url}`);
