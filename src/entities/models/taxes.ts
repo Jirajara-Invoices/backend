@@ -14,5 +14,5 @@ export type Tax = {
   calc_type: TaxCalType;
   created_at: Date;
   updated_at: Date;
-  deleted_at: Date;
+  deleted_at?: Date;
 };
