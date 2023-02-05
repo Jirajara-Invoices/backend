@@ -40,7 +40,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.createType("address_type", ["personal", "clients"]);
   pgm.createTable("addresses", {
     id: "id",
-    userId: {
+    user_id: {
       type: "varchar(40)",
       notNull: true,
       references: '"users"',
@@ -65,7 +65,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.createType("tax_calc_type", ["percentage", "fixed"]);
   pgm.createTable("taxes", {
     id: "id",
-    userId: {
+    user_id: {
       type: "varchar(40)",
       notNull: false,
       references: '"users"',
@@ -73,7 +73,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     name: { type: "varchar(255)", notNull: true },
     rate: { type: "numeric(15,5)", notNull: true },
-    calcType: { type: "tax_calc_type", notNull: true, default: "percentage" },
+    calc_type: { type: "tax_calc_type", notNull: true, default: "percentage" },
     created_at: "created_at",
     updated_at: "updated_at",
     deleted_at: "deleted_at",
@@ -94,19 +94,19 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.createType("invoice_status", ["draft", "sent", "paid", "canceled", "overdue"]);
   pgm.createTable("invoices", {
     id: "id",
-    userId: {
+    user_id: {
       type: "varchar(40)",
       notNull: true,
       references: '"users"',
       onDelete: "CASCADE",
     },
-    addressId: {
+    address_id: {
       type: "varchar(40)",
       notNull: true,
       references: '"addresses"',
       onDelete: "RESTRICT",
     },
-    clientAddressId: {
+    client_address_id: {
       type: "varchar(40)",
       notNull: true,
       references: '"addresses"',
@@ -115,7 +115,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     type: { type: "invoice_type", notNull: true, default: "invoice" },
     number: { type: "varchar(255)", notNull: true },
     date: { type: "timestamp with time zone", notNull: true },
-    dueDate: { type: "timestamp with time zone", notNull: false },
+    due_date: { type: "timestamp with time zone", notNull: false },
     status: { type: "invoice_status", notNull: true, default: "draft" },
     terms: { type: "varchar(255)", notNull: true },
     created_at: "created_at",
@@ -126,13 +126,13 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.createType("invoice_item_type", ["product", "service", "discount", "shipping", "tax"]);
   pgm.createTable("invoice_items", {
     id: "id",
-    invoiceId: {
+    invoice_id: {
       type: "varchar(40)",
       notNull: true,
       references: '"invoices"',
       onDelete: "CASCADE",
     },
-    taxId: {
+    tax_id: {
       type: "varchar(40)",
       notNull: false,
       references: '"taxes"',
