@@ -60,3 +60,15 @@ export function validateFindUserInput(input: FindUserInput): Map<string, string>
 
   return errors;
 }
+
+export function validateLoginInput(email: string, password: string): Map<string, string> {
+  const errors: Map<string, string> = new Map();
+  if (!email || !EMAIL_REGEX.test(email)) {
+    errors.set("email", "A valid email address is required");
+  }
+  if (!password || password.length < 8) {
+    errors.set("password", "Password must be at least 8 characters long");
+  }
+
+  return errors;
+}

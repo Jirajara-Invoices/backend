@@ -215,4 +215,39 @@ describe("UserUseCase tests", () => {
       await expect(userUseCase.findAll(input)).rejects.toThrow(ValidationError);
     });
   });
+
+  describe("checkCredentials", () => {
+    it("should check credentials", async () => {
+      const user: User = {
+        id: "1",
+        name: "John Doe",
+        email: "example@example",
+        role: UserRole.User,
+        country: "US",
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      const userRepository = new Mock<UserRepositoryPort>()
+        .setup((instance) => instance.checkCredentials("example@example", "password"))
+        .returns(Promise.resolve(user))
+        .object();
+      const userUseCase = new UserUseCase(userRepository);
+      const result = await userUseCase.checkCredentials("example@example", "password");
+
+      expect(result).toEqual(user);
+    });
+
+    it("should throw an error if the input is invalid", async () => {
+      const userRepository = new Mock<UserRepositoryPort>()
+        .setup((instance) => instance.checkCredentials("exampl", "password"))
+        .returns(Promise.resolve({} as User))
+        .object();
+      const userUseCase = new UserUseCase(userRepository);
+
+      await expect(userUseCase.checkCredentials("exampl", "password")).rejects.toThrow(
+        ValidationError,
+      );
+    });
+  });
 });

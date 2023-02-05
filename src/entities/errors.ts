@@ -10,3 +10,17 @@ export class ValidationError extends Error {
     return this.errors;
   }
 }
+
+export class UnknownError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "UnknownError";
+  }
+}
+
+export class UnauthorizedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "UnauthorizedError";
+  }
+}

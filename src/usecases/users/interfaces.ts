@@ -23,6 +23,7 @@ export interface UserUseCasePort {
   delete(id: string): Promise<void>;
   findByID(id: string): Promise<User>;
   findAll(input: FindUserInput): Promise<User[]>;
+  checkCredentials(email: string, password: string): Promise<User>;
 }
 
 export interface UserRepositoryPort {
@@ -31,6 +32,7 @@ export interface UserRepositoryPort {
   delete(id: string): Promise<void>;
   findByID(id: string): Promise<User>;
   find(input: FindUserInput): Promise<User[]>;
+  checkCredentials(email: string, password: string): Promise<User>;
 }
 
 export interface UserPresenterPort {

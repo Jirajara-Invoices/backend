@@ -11,6 +11,7 @@ import {
 import {
   validateCreateUserInput,
   validateFindUserInput,
+  validateLoginInput,
   validateUpdateUserInput,
 } from "./validators";
 
@@ -50,5 +51,14 @@ export class UserUseCase implements UserUseCasePort {
     }
 
     return await this.userRepository.find(input);
+  }
+
+  async checkCredentials(email: string, password: string): Promise<User> {
+    const errors = validateLoginInput(email, password);
+    if (errors.size > 0) {
+      throw new ValidationError("Invalid input for login", errors);
+    }
+
+    return await this.userRepository.checkCredentials(email, password);
   }
 }
