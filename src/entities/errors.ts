@@ -1,3 +1,5 @@
+import { GraphQLError } from "graphql/error";
+
 export class ValidationError extends Error {
   private readonly errors: Map<string, string>;
   constructor(message: string, errors: Map<string, string>) {
@@ -25,9 +27,11 @@ export class UnauthorizedError extends Error {
   }
 }
 
-export class GraphQLError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "GraphQLError";
-  }
+export function mapGraphQLError(error: ValidationError): GraphQLError {
+  return new GraphQLError(error.message, {
+    extensions: {
+      code: "VALIDATION_ERROR",
+      fieldErrors: Array.from(error.getFieldErrors().entries()),
+    },
+  });
 }

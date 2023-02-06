@@ -46,17 +46,17 @@ export class UserRepository implements UserRepositoryPort {
     const whereClauses = [];
 
     if (input.name) {
-      whereClauses.push(sql.unsafe`name like '%${input.name}%'`);
+      whereClauses.push(sql.unsafe`name ilike ${sql.literalValue(`%${input.name}%`)}`);
     }
     if (input.email) {
-      whereClauses.push(sql.unsafe`email like '%${input.email}%'`);
+      whereClauses.push(sql.unsafe`email ilike ${sql.literalValue(`%${input.email}%`)}`);
     }
     if (input.cursor) {
       const direction =
-        input.cursorDirection === undefined || input.cursorDirection === "ASC" ? ">" : "<";
-      whereClauses.push(
-        sql.unsafe`created_at ${direction} ${sql.timestamp(new Date(input.cursor))}`,
-      );
+        input.cursorDirection === undefined || input.cursorDirection === "ASC"
+          ? sql.fragment`>`
+          : sql.fragment`<`;
+      whereClauses.push(sql.unsafe`created_at ${direction} ${input.cursor}`);
     }
 
     const sqlQueryArray = [
@@ -124,7 +124,7 @@ export class UserRepository implements UserRepositoryPort {
       );
       const sqlFields = fieldsToUpdate.map(
         (field) =>
-          sql.fragment`${sql.identifier([field])} = ${user[field as keyof typeof user] || ""}}`,
+          sql.fragment`${sql.identifier([field])} = ${user[field as keyof typeof user] || ""}`,
       );
       const newUser = await this.dbPool.query(sql.unsafe`
         UPDATE users SET ${sql.join(sqlFields, sql.fragment`, `)} WHERE id = ${user.id} RETURNING *

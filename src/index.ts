@@ -32,8 +32,6 @@ const apollo = new ApolloServer<GraphQLContext>({
   plugins: [fastifyApolloDrainPlugin(fastify)],
 });
 
-console.log(process.env.NODE_ENV);
-
 await fastify.register(rateLimit);
 await fastify.register(helmet, {
   contentSecurityPolicy: process.env.NODE_ENV === "production" ? undefined : false,
@@ -58,4 +56,5 @@ const url = await fastify.listen({
   host: "0.0.0.0",
 });
 
+// eslint-disable-next-line no-console
 console.log(`🚀  Server ready at: ${url}`);

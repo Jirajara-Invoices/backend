@@ -1,6 +1,6 @@
 import { decodeCursor, encodeCursor, mapGenericFilters } from "./relay";
 
-const encodedCursor = "VXNlcjoxOjIwMjMtMDEtMDE=";
+const encodedCursor = "VXNlcjsxOzIwMjMtMDEtMDE=";
 
 describe("relay utilities tests", () => {
   it("should decode cursor", () => {
@@ -22,7 +22,7 @@ describe("relay utilities tests", () => {
   it("should map filters", () => {
     const args = {
       first: 10,
-      after: "VXNlcjoxOjIwMjMtMDEtMDE=",
+      after: encodedCursor,
       last: undefined,
       before: undefined,
     };
@@ -53,7 +53,7 @@ describe("relay utilities tests", () => {
       first: undefined,
       after: undefined,
       last: 10,
-      before: "VXNlcjoxOjIwMjMtMDEtMDE=",
+      before: encodedCursor,
     };
     const input = mapGenericFilters(args);
 
@@ -78,9 +78,9 @@ describe("relay utilities tests", () => {
   it("should return error with before and after", () => {
     const args = {
       first: undefined,
-      after: "VXNlcjoxOjIwMjMtMDEtMDE=",
+      after: encodedCursor,
       last: undefined,
-      before: "VXNlcjoxOjIwMjMtMDEtMDE=",
+      before: encodedCursor,
     };
     expect(() => mapGenericFilters(args)).toThrowError("Cannot specify both before and after");
   });

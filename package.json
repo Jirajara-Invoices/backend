@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "compile": "tsc",
-    "start": "rm -rf dist/ && pnpm compile && node --experimental-specifier-resolution=node ./dist/src/index.js",
+    "start": "rm -rf dist/ && pnpm compile && ROARR_LOG=true node --experimental-specifier-resolution=node ./dist/src/index.js",
     "migrate": "ts-node --project tsconfig.migrations.json node_modules/node-pg-migrate/bin/node-pg-migrate",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:cov": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"

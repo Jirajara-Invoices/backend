@@ -50,6 +50,7 @@
   },
   "rules": {
     "indent": ["error", 2],
-    "prettier/prettier": "error"
+    "prettier/prettier": "error",
+    "no-console": "error"
   }
 }

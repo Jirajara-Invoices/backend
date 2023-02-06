@@ -1,11 +1,16 @@
-import { GraphQLError } from "../entities/errors";
+import { GraphQLError } from "graphql/error";
+
 import { Pagination } from "../entities/types/pagination";
 
 export function decodeCursor(cursor: string): Map<string, string> {
-  const decoded = Buffer.from(cursor, "base64").toString("utf-8").split(":");
+  const decoded = Buffer.from(cursor, "base64").toString("utf-8").split(";");
 
   if (decoded.length !== 3) {
-    throw new GraphQLError("Invalid cursor");
+    throw new GraphQLError("Invalid cursor", {
+      extensions: {
+        code: "RELAY_VALIDATION_ERROR",
+      },
+    });
   }
 
   return new Map([
@@ -16,7 +21,7 @@ export function decodeCursor(cursor: string): Map<string, string> {
 }
 
 export function encodeCursor(type: string, id: string, createdAt: string): string {
-  return Buffer.from(`${type}:${id}:${createdAt}`).toString("base64");
+  return Buffer.from(`${type};${id};${createdAt}`).toString("base64");
 }
 
 export type PageInfo = {
@@ -42,10 +47,18 @@ export function mapGenericFilters(args: {
   before?: string;
 }): Pagination {
   if (args.first && args.last) {
-    throw new GraphQLError("Cannot specify both first and last");
+    throw new GraphQLError("Cannot specify both first and last", {
+      extensions: {
+        code: "RELAY_VALIDATION_ERROR",
+      },
+    });
   }
   if (args.before && args.after) {
-    throw new GraphQLError("Cannot specify both before and after");
+    throw new GraphQLError("Cannot specify both before and after", {
+      extensions: {
+        code: "RELAY_VALIDATION_ERROR",
+      },
+    });
   }
 
   const cursor =
