@@ -69,7 +69,6 @@ describe("UsersRepository tests", () => {
       const userRepository = new UserRepository(pool);
       const result = await userRepository.find({
         email: "exam",
-        page: 1,
         limit: 10,
         direction: "ASC",
       });
@@ -85,7 +84,6 @@ describe("UsersRepository tests", () => {
 
       const result = await userRepository.find({
         email: "exam",
-        page: 1,
         limit: 10,
         direction: "ASC",
       });

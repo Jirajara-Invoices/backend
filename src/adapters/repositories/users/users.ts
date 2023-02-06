@@ -43,14 +43,37 @@ export class UserRepository implements UserRepositoryPort {
   }
 
   async find(input: FindUserInput): Promise<User[]> {
-    const sqlQuery = sql.unsafe`SELECT * FROM users ${sql.join(
-      [
-        sql.unsafe`WHERE email like '%${input.email || ""}%'`,
-        sql.unsafe`name like '%${input.name || ""}%'`,
-      ],
-      sql.fragment` AND `,
-    )}
-    LIMIT ${input.limit} OFFSET ${input.page * input.limit} ORDER BY created_at ${input.direction}`;
+    const whereClauses = [];
+
+    if (input.name) {
+      whereClauses.push(sql.unsafe`name like '%${input.name}%'`);
+    }
+    if (input.email) {
+      whereClauses.push(sql.unsafe`email like '%${input.email}%'`);
+    }
+    if (input.cursor) {
+      const direction =
+        input.cursorDirection === undefined || input.cursorDirection === "ASC" ? ">" : "<";
+      whereClauses.push(
+        sql.unsafe`created_at ${direction} ${sql.timestamp(new Date(input.cursor))}`,
+      );
+    }
+
+    const sqlQueryArray = [
+      sql.fragment`SELECT * FROM users`,
+      sql.fragment`ORDER BY created_at ${
+        input.direction === "ASC" ? sql.fragment`ASC` : sql.fragment`DESC`
+      } LIMIT ${input.limit}`,
+    ];
+    if (whereClauses.length > 0) {
+      sqlQueryArray.splice(
+        1,
+        0,
+        sql.fragment`WHERE ${sql.join(whereClauses, sql.fragment` AND `)}`,
+      );
+    }
+
+    const sqlQuery = sql.unsafe`${sql.join(sqlQueryArray, sql.fragment` `)}`;
 
     const users = await this.dbPool.query(sqlQuery);
 

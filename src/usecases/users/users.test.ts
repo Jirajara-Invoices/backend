@@ -136,7 +136,6 @@ describe("UserUseCase tests", () => {
   describe("find all", () => {
     it("should find all users without filters", async () => {
       const input: FindUserInput = {
-        page: 1,
         limit: 10,
         direction: "ASC",
       };
@@ -174,7 +173,6 @@ describe("UserUseCase tests", () => {
     it("should find all users with filters", async () => {
       const input: FindUserInput = {
         name: "John Doe",
-        page: 1,
         limit: 10,
         direction: "ASC",
       };
@@ -202,8 +200,7 @@ describe("UserUseCase tests", () => {
 
     it("should throw an error if the input is invalid", async () => {
       const input: FindUserInput = {
-        page: 0,
-        limit: 10,
+        limit: 0,
         direction: "ASC",
       };
       const userRepository = new Mock<UserRepositoryPort>()

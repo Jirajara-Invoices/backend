@@ -50,8 +50,8 @@ export function validateFindUserInput(input: FindUserInput): Map<string, string>
     errors.set("limit", "Limit must be at least 1");
   }
 
-  if (!input.page || input.page < 1) {
-    errors.set("page", "Page must be at least 1");
+  if (input.cursor && input.cursor.length < 1 && isNaN(new Date(input.cursor).valueOf())) {
+    errors.set("cursor", "Cursor must be a valid date string");
   }
 
   if (!input.direction || (input.direction !== "ASC" && input.direction !== "DESC")) {

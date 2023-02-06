@@ -1,0 +1,78 @@
+scalar DateTime
+
+interface Node {
+    id: ID!
+}
+
+type PageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
+}
+
+enum UserRole {
+    ADMIN
+    USER
+}
+
+type User implements Node {
+    id: ID!
+    name: String!
+    email: String!
+    password: String!
+    country: String!
+    role: UserRole!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    deletedAt: DateTime
+}
+
+type UserEdge {
+    cursor: String!
+    node: User!
+}
+
+type UserConnection {
+    edges: [UserEdge]
+    pageInfo: PageInfo!
+}
+
+input FindUserInput {
+    name: String
+    email: String
+}
+
+type Query {
+    user(id: ID!): User
+    users(
+        first: Int,
+        after: String,
+        last: Int,
+        before: String,
+        filter: FindUserInput!
+    ): UserConnection
+}
+
+input CreateUserInput {
+    name: String!
+    email: String!
+    password: String!
+    country: String!
+}
+
+input UpdateUserInput {
+    id: ID!
+    name: String
+    email: String
+    password: String
+    country: String
+}
+
+type Mutation {
+    createUser(input: CreateUserInput!): User!
+    updateUser(input: UpdateUserInput!): User!
+    deleteUser(id: ID!): Boolean!
+
+    login(email: String!, password: String!): User!
+}
