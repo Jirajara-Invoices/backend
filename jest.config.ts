@@ -16,6 +16,7 @@ const jestConfig: JestConfigWithTsJest = {
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
+  modulePathIgnorePatterns: ["<rootDir>/dist/"],
 };
 
 export default jestConfig;

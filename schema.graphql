@@ -1,5 +1,12 @@
 scalar DateTime
 
+directive @auth(requires: Role = ADMIN) on OBJECT | FIELD_DEFINITION
+
+enum Role {
+    ADMIN
+    USER
+}
+
 interface Node {
     id: ID!
 }
@@ -44,14 +51,15 @@ input FindUserInput {
 }
 
 type Query {
-    user(id: ID!): User
+    currentUser: User! @auth(requires: USER)
+    user(id: ID!): User! @auth(requires: ADMIN)
     users(
         first: Int,
         after: String,
         last: Int,
         before: String,
         filter: FindUserInput!
-    ): UserConnection
+    ): UserConnection @auth(requires: ADMIN)
 }
 
 input CreateUserInput {
@@ -71,8 +79,9 @@ input UpdateUserInput {
 
 type Mutation {
     createUser(input: CreateUserInput!): User!
-    updateUser(input: UpdateUserInput!): User!
-    deleteUser(id: ID!): Boolean!
+    updateUser(input: UpdateUserInput!): User! @auth(requires: USER)
+    deleteUser(id: ID!): Boolean! @auth(requires: USER)
 
     login(email: String!, password: String!): User!
+    logout: Boolean! @auth(requires: USER)
 }

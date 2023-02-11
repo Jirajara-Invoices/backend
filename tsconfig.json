@@ -11,6 +11,11 @@
     "esModuleInterop": true,
     "strict": true,
     "types": ["node", "jest"],
+    "typeRoots": ["./src/typings", "./node_modules/@types"],
+  },
+  "ts-node": {
+    "esm": true,
+    "files": true
   },
   "exclude": [
     "dist",

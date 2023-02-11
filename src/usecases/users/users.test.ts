@@ -1,12 +1,20 @@
-import { Mock } from "moq.ts";
+import { IMock, It, Mock, Times } from "moq.ts";
+import { Logger } from "winston";
 
 import type { CreateUserInput, FindUserInput, UserRepositoryPort } from "./interfaces";
 import { UserUseCase } from "./usecase";
 import { User, UserRole } from "../../entities/models/users";
 import { ValidationError } from "../../entities/errors";
-import { describe } from "node:test";
 
 describe("UserUseCase tests", () => {
+  let mockLogger: IMock<Logger>;
+
+  beforeEach(() => {
+    mockLogger = new Mock<Logger>()
+      .setup((instance) => instance.error(It.IsAny(), It.IsAny()))
+      .returns({} as any);
+  });
+
   describe("create", () => {
     it("should create a user", async () => {
       const input: CreateUserInput = {
@@ -29,10 +37,11 @@ describe("UserUseCase tests", () => {
         .setup((instance) => instance.save(input))
         .returns(Promise.resolve(user))
         .object();
-      const userUseCase = new UserUseCase(userRepository);
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
       const result = await userUseCase.create(input);
 
       expect(result).toEqual(user);
+      mockLogger.verify((instance) => instance.error, Times.Never());
     });
 
     it("should throw an error if the input is invalid", async () => {
@@ -47,9 +56,10 @@ describe("UserUseCase tests", () => {
         .setup((instance) => instance.save(input))
         .returns(Promise.resolve({} as User))
         .object();
-      const userUseCase = new UserUseCase(userRepository);
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
 
       await expect(userUseCase.create(input)).rejects.toThrow(ValidationError);
+      mockLogger.verify((instance) => instance.error, Times.Once());
     });
   });
 
@@ -73,10 +83,12 @@ describe("UserUseCase tests", () => {
         .setup((instance) => instance.update(input))
         .returns(Promise.resolve(user))
         .object();
-      const userUseCase = new UserUseCase(userRepository);
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
+      userUseCase.setCurrentUser(user);
       const result = await userUseCase.update(input);
 
       expect(result).toEqual(user);
+      mockLogger.verify((instance) => instance.error, Times.Never());
     });
 
     it("should throw an error if the input is invalid", async () => {
@@ -89,13 +101,43 @@ describe("UserUseCase tests", () => {
         .setup((instance) => instance.update(input))
         .returns(Promise.resolve({} as User))
         .object();
-      const userUseCase = new UserUseCase(userRepository);
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
 
       await expect(userUseCase.update(input)).rejects.toThrow(ValidationError);
+      mockLogger.verify((instance) => instance.error, Times.Once());
+    });
+
+    it("should throw an error if the user is not the same", async () => {
+      const input = {
+        id: "1",
+        name: "John Doe",
+      };
+
+      const userRepository = new Mock<UserRepositoryPort>()
+        .setup((instance) => instance.update(input))
+        .returns(Promise.resolve({} as User))
+        .object();
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
+
+      await expect(userUseCase.update(input)).rejects.toThrow(ValidationError);
+      mockLogger.verify((instance) => instance.error, Times.Once());
     });
   });
 
   describe("delete", () => {
+    it("should throw an error if current user is not logged", async () => {
+      const id = "1";
+
+      const userRepository = new Mock<UserRepositoryPort>()
+        .setup((instance) => instance.delete(id))
+        .returns(Promise.resolve())
+        .object();
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
+
+      await expect(userUseCase.delete(id)).rejects.toThrow(ValidationError);
+      mockLogger.verify((instance) => instance.error, Times.Once());
+    });
+
     it("should delete a user", async () => {
       const id = "1";
 
@@ -103,9 +145,20 @@ describe("UserUseCase tests", () => {
         .setup((instance) => instance.delete(id))
         .returns(Promise.resolve())
         .object();
-      const userUseCase = new UserUseCase(userRepository);
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
+      const user: User = {
+        id: "1",
+        name: "John Doe",
+        email: "example@example",
+        role: UserRole.User,
+        country: "US",
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      userUseCase.setCurrentUser(user);
 
       await expect(userUseCase.delete(id)).resolves.toBeUndefined();
+      await mockLogger.verify((instance) => instance.error, Times.Never());
     });
   });
 
@@ -126,10 +179,11 @@ describe("UserUseCase tests", () => {
         .setup((instance) => instance.findByID(id))
         .returns(Promise.resolve(user))
         .object();
-      const userUseCase = new UserUseCase(userRepository);
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
       const result = await userUseCase.findByID(id);
 
       expect(result).toEqual(user);
+      mockLogger.verify((instance) => instance.error, Times.Never());
     });
   });
 
@@ -164,10 +218,11 @@ describe("UserUseCase tests", () => {
         .setup((instance) => instance.find(input))
         .returns(Promise.resolve(users))
         .object();
-      const userUseCase = new UserUseCase(userRepository);
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
       const result = await userUseCase.findAll(input);
 
       expect(result).toEqual(users);
+      mockLogger.verify((instance) => instance.error, Times.Never());
     });
 
     it("should find all users with filters", async () => {
@@ -192,10 +247,11 @@ describe("UserUseCase tests", () => {
         .setup((instance) => instance.find(input))
         .returns(Promise.resolve(users))
         .object();
-      const userUseCase = new UserUseCase(userRepository);
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
       const result = await userUseCase.findAll(input);
 
       expect(result).toEqual(users);
+      mockLogger.verify((instance) => instance.error, Times.Never());
     });
 
     it("should throw an error if the input is invalid", async () => {
@@ -207,9 +263,10 @@ describe("UserUseCase tests", () => {
         .setup((instance) => instance.find(input))
         .returns(Promise.resolve([]))
         .object();
-      const userUseCase = new UserUseCase(userRepository);
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
 
       await expect(userUseCase.findAll(input)).rejects.toThrow(ValidationError);
+      mockLogger.verify((instance) => instance.error, Times.Once());
     });
   });
 
@@ -229,10 +286,11 @@ describe("UserUseCase tests", () => {
         .setup((instance) => instance.checkCredentials("example@example", "password"))
         .returns(Promise.resolve(user))
         .object();
-      const userUseCase = new UserUseCase(userRepository);
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
       const result = await userUseCase.checkCredentials("example@example", "password");
 
       expect(result).toEqual(user);
+      mockLogger.verify((instance) => instance.error, Times.Never());
     });
 
     it("should throw an error if the input is invalid", async () => {
@@ -240,11 +298,12 @@ describe("UserUseCase tests", () => {
         .setup((instance) => instance.checkCredentials("exampl", "password"))
         .returns(Promise.resolve({} as User))
         .object();
-      const userUseCase = new UserUseCase(userRepository);
+      const userUseCase = new UserUseCase(userRepository, mockLogger.object());
 
       await expect(userUseCase.checkCredentials("exampl", "password")).rejects.toThrow(
         ValidationError,
       );
+      mockLogger.verify((instance) => instance.error, Times.Once());
     });
   });
 });

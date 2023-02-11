@@ -1,21 +1,32 @@
-import { createContextFactory } from "./context";
-import { makePool } from "./mock";
+import { Request, Response } from "express";
 import { Mock } from "moq.ts";
-import { FastifyReply, FastifyRequest } from "fastify";
+
+import { createContextFactory, SessionContext } from "./context";
+import { makePool } from "./mock";
 
 describe("context", () => {
   it("should be able to create a context", async () => {
     const pool = makePool([]);
-    const request = new Mock<FastifyRequest>()
-      .setup((instance) => instance)
-      .returns({} as FastifyRequest)
+    const session = new Mock<SessionContext>()
+      .setup((instance) => instance.userId)
+      .returns("user-id")
       .object();
-    const reply = new Mock<FastifyReply>()
-      .setup((instance) => instance)
-      .returns({} as FastifyReply)
+    const req = new Mock<Request>()
+      .setup((instance) => instance.session)
+      .returns(session)
       .object();
-    const context = await createContextFactory(pool)(request, reply);
+    const res = new Mock<Response>()
+      .setup((instance) => instance)
+      .returns({} as Response)
+      .object();
+    const contextFactory = createContextFactory(pool);
+    const context = await contextFactory({ req, res });
 
     expect(context).toBeDefined();
+    expect(context.useCases).toBeDefined();
+    expect(context.useCases.users).toBeDefined();
+    expect(context.auth).toBeDefined();
+    expect(context.auth.user).toBeNull();
+    expect(context.auth.session).toBe(session);
   });
 });

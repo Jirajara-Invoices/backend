@@ -52,4 +52,49 @@ export const userMutationResolvers = {
       throw error;
     }
   },
+
+  login: async (
+    _: any,
+    { email, password }: { email: string; password: string },
+    { useCases, auth }: GraphQLContext,
+  ) => {
+    const useCase = useCases.users;
+
+    try {
+      const user = await useCase.checkCredentials(email, password);
+
+      if (!auth.session.userId || auth.session.userId !== user.id) {
+        auth.session.regenerate(function (err) {
+          if (err) throw err;
+
+          auth.session.userId = user.id;
+          auth.session.save();
+        });
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        throw mapGraphQLError(error);
+      }
+
+      throw error;
+    }
+  },
+  logout: async (_: any, __: any, { auth }: GraphQLContext) => {
+    auth.session.userId = null;
+    auth.session.save((error) => {
+      if (error) {
+        throw error;
+      }
+
+      auth.session.regenerate((error) => {
+        if (error) {
+          throw error;
+        }
+      });
+    });
+
+    return true;
+  },
 };

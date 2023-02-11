@@ -18,6 +18,7 @@ export interface FindUserInput extends Pagination {
 }
 
 export interface UserUseCasePort {
+  setCurrentUser(user: User | null): void;
   create(input: CreateUserInput): Promise<User>;
   update(input: UpdateUserInput): Promise<User>;
   delete(id: string): Promise<void>;

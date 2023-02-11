@@ -127,7 +127,10 @@ export class UserRepository implements UserRepositoryPort {
           sql.fragment`${sql.identifier([field])} = ${user[field as keyof typeof user] || ""}`,
       );
       const newUser = await this.dbPool.query(sql.unsafe`
-        UPDATE users SET ${sql.join(sqlFields, sql.fragment`, `)} WHERE id = ${user.id} RETURNING *
+        UPDATE users SET ${sql.join(
+          sqlFields,
+          sql.fragment`, `,
+        )}, updated_at = current_timestamp WHERE id = ${user.id} RETURNING *
       `);
 
       return mapUser(newUser.rows[0]);

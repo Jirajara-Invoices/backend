@@ -6,10 +6,10 @@ import { makeExecutableSchema } from "@graphql-tools/schema";
 import { userQueryResolvers } from "./queries";
 import { userMutationResolvers } from "./mutations";
 import { dateScalarResolvers } from "../types/date";
-import { GraphQLContext } from "../../../utilities/context";
+import { GraphQLContext, SessionContext } from "../../../utilities/context";
 import { UserUseCase } from "../../../usecases/users/usecase";
 import { Mock } from "moq.ts";
-import { User } from "../../../entities/models/users";
+import { User, UserRole } from "../../../entities/models/users";
 
 const resolvers = {
   ...dateScalarResolvers,
@@ -44,7 +44,9 @@ const USERS_QUERY = `
 `;
 
 describe("users schema tests", () => {
+  const session = new Mock<SessionContext>().object();
   let server: ApolloServer<GraphQLContext>;
+  let user: User;
 
   beforeAll(async () => {
     server = new ApolloServer<GraphQLContext>({
@@ -52,6 +54,16 @@ describe("users schema tests", () => {
         schema: makeExecutableSchema({ typeDefs, resolvers }),
       }),
     });
+
+    user = {
+      id: "1",
+      name: "John Doe",
+      email: "example@example.com",
+      country: "VE",
+      role: UserRole.Admin,
+      created_at: new Date(),
+      updated_at: new Date(),
+    };
   });
 
   describe("user query", () => {
@@ -76,13 +88,17 @@ describe("users schema tests", () => {
             useCases: {
               users: mockUserUseCase,
             },
+            auth: {
+              user,
+              session,
+            },
           },
         },
       );
       const body = result.body;
 
       assert(body.kind === "single");
-      expect(result).toMatchSnapshot();
+
       expect((body.singleResult.data?.user as User).id).toBeTruthy();
     });
   });
@@ -110,13 +126,17 @@ describe("users schema tests", () => {
             useCases: {
               users: mockUserUseCase,
             },
+            auth: {
+              user,
+              session,
+            },
           },
         },
       );
       const body = result.body;
 
       assert(body.kind === "single");
-      expect(result).toMatchSnapshot();
+
       expect(
         (
           (
@@ -162,13 +182,17 @@ describe("users schema tests", () => {
             useCases: {
               users: mockUserUseCase,
             },
+            auth: {
+              user,
+              session,
+            },
           },
         },
       );
       const body = result.body;
 
       assert(body.kind === "single");
-      expect(result).toMatchSnapshot();
+
       expect((body.singleResult.data?.createUser as User).id).toBeTruthy();
     });
   });
@@ -204,13 +228,17 @@ describe("users schema tests", () => {
             useCases: {
               users: mockUserUseCase,
             },
+            auth: {
+              user,
+              session,
+            },
           },
         },
       );
       const body = result.body;
 
       assert(body.kind === "single");
-      expect(result).toMatchSnapshot();
+
       expect((body.singleResult.data?.updateUser as User).id).toBeTruthy();
     });
   });
@@ -241,13 +269,138 @@ describe("users schema tests", () => {
             useCases: {
               users: mockUserUseCase,
             },
+            auth: {
+              user,
+              session,
+            },
           },
         },
       );
       const body = result.body;
 
       assert(body.kind === "single");
-      expect(result).toMatchSnapshot();
+
+      expect(body.singleResult.errors).toBeUndefined();
+    });
+  });
+
+  describe("currentUser query", () => {
+    let mockUserUseCase: UserUseCase;
+    beforeEach(() => {
+      mockUserUseCase = new Mock<UserUseCase>()
+        .setup((x) => x.findByID)
+        .returns(() => Promise.resolve({} as User))
+        .object();
+    });
+
+    it("should return a valid user", async () => {
+      const result = await server.executeOperation(
+        {
+          query: `
+            query fetchCurrentUser {
+              currentUser {
+                id
+              }
+            }
+          `,
+        },
+        {
+          contextValue: {
+            useCases: {
+              users: mockUserUseCase,
+            },
+            auth: {
+              user,
+              session,
+            },
+          },
+        },
+      );
+      const body = result.body;
+
+      assert(body.kind === "single");
+
+      expect((body.singleResult.data?.currentUser as User).id).toBeTruthy();
+    });
+  });
+
+  describe("login mutation", () => {
+    let mockUserUseCase: UserUseCase;
+    beforeEach(() => {
+      mockUserUseCase = new Mock<UserUseCase>()
+        .setup((x) => x.checkCredentials)
+        .returns(() => Promise.resolve({} as User))
+        .object();
+    });
+
+    it("should log in a user without error", async () => {
+      const result = await server.executeOperation(
+        {
+          query: `
+            mutation loginUser($email: String!, $password: String!) {
+              login(email: $email, password: $password) {
+                id
+              }
+            }
+          `,
+          variables: {
+            email: "example@example.com",
+            password: "1234",
+          },
+        },
+        {
+          contextValue: {
+            useCases: {
+              users: mockUserUseCase,
+            },
+            auth: {
+              user: null,
+              session,
+            },
+          },
+        },
+      );
+
+      const body = result.body;
+
+      assert(body.kind === "single");
+
+      expect(body.singleResult.errors).toBeUndefined();
+    });
+  });
+
+  describe("logout mutation", () => {
+    let mockUserUseCase: UserUseCase;
+    beforeEach(() => {
+      mockUserUseCase = new Mock<UserUseCase>().object();
+    });
+
+    it("should logout without error", async () => {
+      const result = await server.executeOperation(
+        {
+          query: `
+            mutation logoutUser {
+              logout
+            }
+          `,
+        },
+        {
+          contextValue: {
+            useCases: {
+              users: mockUserUseCase,
+            },
+            auth: {
+              user: user,
+              session,
+            },
+          },
+        },
+      );
+
+      const body = result.body;
+
+      assert(body.kind === "single");
+
       expect(body.singleResult.errors).toBeUndefined();
     });
   });

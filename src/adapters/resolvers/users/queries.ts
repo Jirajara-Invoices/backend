@@ -1,6 +1,7 @@
 import { FindUserInput } from "../../../usecases/users/interfaces";
 import { GraphQLContext } from "../../../utilities/context";
 import { generateConnection, mapGenericFilters } from "../../../utilities/relay";
+import { GraphQLError } from "graphql/error";
 
 function mapCursorArgsToFindUserInput(args: {
   first?: number;
@@ -50,5 +51,15 @@ export const userQueryResolvers = {
       },
       users.length,
     );
+  },
+  currentUser: async (_: any, __: any, { auth }: GraphQLContext) => {
+    if (!auth.user) {
+      throw new GraphQLError("Not authenticated", {
+        extensions: {
+          code: "UNAUTHENTICATED",
+        },
+      });
+    }
+    return auth.user;
   },
 };
