@@ -22,7 +22,7 @@ export interface UserUseCasePort extends BaseUseCase {
   create(input: CreateUserInput): Promise<User>;
   update(input: UpdateUserInput): Promise<User>;
   delete(id: string): Promise<void>;
-  findByID(id: string): Promise<User>;
+  findByID(id: string, session?: boolean): Promise<User>;
   findAll(input: FindUserInput): Promise<User[]>;
   checkCredentials(email: string, password: string): Promise<User>;
 }

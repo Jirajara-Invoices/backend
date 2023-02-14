@@ -60,7 +60,7 @@ describe("Addresses tests suites", () => {
       const input: CreateAddressInput = {
         type: address.type,
         name: address.name,
-        taxId: address.tax_id,
+        tax_id: address.tax_id,
         country: address.country,
         email: address.email,
         number: address.number,
@@ -81,7 +81,7 @@ describe("Addresses tests suites", () => {
       const input: CreateAddressInput = {
         type: address.type,
         name: "a",
-        taxId: address.tax_id,
+        tax_id: address.tax_id,
         country: address.country,
       };
 

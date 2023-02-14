@@ -111,8 +111,8 @@ app.use(
   expressSession({
     name: "session_id",
     secret: process.env.SESSION_SECRET || "",
-    saveUninitialized: true,
-    resave: true,
+    saveUninitialized: false,
+    resave: false,
     store: store,
     cookie: {
       path: "/",

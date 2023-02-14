@@ -56,21 +56,16 @@ export const userMutationResolvers = {
   login: async (
     _: any,
     { email, password }: { email: string; password: string },
-    { useCases, auth }: GraphQLContext,
+    { logger, useCases, req }: GraphQLContext,
   ) => {
     const useCase = useCases.users;
 
     try {
       const user = await useCase.checkCredentials(email, password);
+      req.session.destroy((err) => logger.error(err));
+      req.sessionStore.generate(req);
 
-      if (!auth.session.userId || auth.session.userId !== user.id) {
-        auth.session.regenerate(function (err) {
-          if (err) throw err;
-
-          auth.session.userId = user.id;
-          auth.session.save();
-        });
-      }
+      req.session.userId = user.id;
 
       return user;
     } catch (error) {
@@ -81,19 +76,9 @@ export const userMutationResolvers = {
       throw error;
     }
   },
-  logout: async (_: any, __: any, { auth }: GraphQLContext) => {
-    auth.session.userId = null;
-    auth.session.save((error) => {
-      if (error) {
-        throw error;
-      }
-
-      auth.session.regenerate((error) => {
-        if (error) {
-          throw error;
-        }
-      });
-    });
+  logout: async (_: any, __: any, { logger, req }: GraphQLContext) => {
+    req.session.destroy((err) => logger.error(err));
+    req.sessionStore.generate(req);
 
     return true;
   },

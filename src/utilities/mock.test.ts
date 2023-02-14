@@ -10,7 +10,7 @@ describe("mock utils", () => {
 
   describe("mock utils", () => {
     it("should create a mock context factory", () => {
-      const contextFactory = createMockContextFactory();
+      const contextFactory = createMockContextFactory(null);
       const context = contextFactory(null);
       expect(context).toMatchSnapshot();
     });
@@ -25,7 +25,7 @@ describe("mock utils", () => {
         created_at: new Date(),
         updated_at: new Date(),
       };
-      const contextFactory = createMockContextFactory();
+      const contextFactory = createMockContextFactory(null);
       const context = contextFactory(user);
       expect(context.auth.user).toBe(user);
     });

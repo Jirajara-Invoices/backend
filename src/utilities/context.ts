@@ -14,12 +14,13 @@ import { LoggerUseCasePort } from "../usecases/common/interfaces";
 export type SessionContext = Session & Partial<SessionData>;
 
 export interface GraphQLContext {
+  logger: LoggerUseCasePort;
   useCases: {
     users: UserUseCasePort;
   };
+  req: Express.Request;
   auth: {
     user: User | null;
-    session: SessionContext;
   };
 }
 
@@ -37,7 +38,7 @@ async function getAuthUser(
   const userId = session.userId;
   if (userId) {
     try {
-      return await useCase.findByID(userId);
+      return await useCase.findByID(userId, true);
     } catch (error) {
       log.error("Failed to get user from session");
     }
@@ -49,18 +50,20 @@ async function getAuthUser(
 export const createContextFactory = (
   dbPool: DatabasePool,
 ): ContextFunction<[ExpressContextFunctionArgument], GraphQLContext> => {
-  return async ({ req: { session } }) => {
-    const log = new LoggerAdapter(logger.child({ session: session.id }));
+  return async ({ req }) => {
+    const log = new LoggerAdapter(logger.child({ session: req.session.id }));
     const userUseCase = instantiateUserUseCase(dbPool, log);
-    const user = await getAuthUser(session, userUseCase, log);
+    const user = await getAuthUser(req.session, userUseCase, log);
     userUseCase.setCurrentUser(user);
+
     return {
+      logger: log,
       useCases: {
         users: userUseCase,
       },
+      req,
       auth: {
         user: user,
-        session: session,
       },
     };
   };

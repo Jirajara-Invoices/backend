@@ -26,7 +26,7 @@ describe("auth directive", () => {
         "auth",
       ),
     });
-    contextFactory = createMockContextFactory();
+    contextFactory = createMockContextFactory(null);
 
     user = {
       id: "1",

@@ -6,10 +6,11 @@ import { makeExecutableSchema } from "@graphql-tools/schema";
 import { userQueryResolvers } from "./queries";
 import { userMutationResolvers } from "./mutations";
 import { dateScalarResolvers } from "../types/date";
-import { GraphQLContext, SessionContext } from "../../../utilities/context";
+import { GraphQLContext } from "../../../utilities/context";
 import { UserUseCase } from "../../../usecases/users/usecase";
 import { Mock } from "moq.ts";
 import { User, UserRole } from "../../../entities/models/users";
+import { createMockContextFactory } from "../../../utilities/mock";
 
 const resolvers = {
   ...dateScalarResolvers,
@@ -44,7 +45,6 @@ const USERS_QUERY = `
 `;
 
 describe("users schema tests", () => {
-  const session = new Mock<SessionContext>().object();
   let server: ApolloServer<GraphQLContext>;
   let user: User;
 
@@ -84,15 +84,11 @@ describe("users schema tests", () => {
           },
         },
         {
-          contextValue: {
+          contextValue: createMockContextFactory({
             useCases: {
               users: mockUserUseCase,
             },
-            auth: {
-              user,
-              session,
-            },
-          },
+          })(user),
         },
       );
       const body = result.body;
@@ -122,15 +118,11 @@ describe("users schema tests", () => {
           },
         },
         {
-          contextValue: {
+          contextValue: createMockContextFactory({
             useCases: {
               users: mockUserUseCase,
             },
-            auth: {
-              user,
-              session,
-            },
-          },
+          })(user),
         },
       );
       const body = result.body;
@@ -178,15 +170,11 @@ describe("users schema tests", () => {
           },
         },
         {
-          contextValue: {
+          contextValue: createMockContextFactory({
             useCases: {
               users: mockUserUseCase,
             },
-            auth: {
-              user,
-              session,
-            },
-          },
+          })(user),
         },
       );
       const body = result.body;
@@ -224,15 +212,11 @@ describe("users schema tests", () => {
           },
         },
         {
-          contextValue: {
+          contextValue: createMockContextFactory({
             useCases: {
               users: mockUserUseCase,
             },
-            auth: {
-              user,
-              session,
-            },
-          },
+          })(user),
         },
       );
       const body = result.body;
@@ -265,15 +249,11 @@ describe("users schema tests", () => {
           },
         },
         {
-          contextValue: {
+          contextValue: createMockContextFactory({
             useCases: {
               users: mockUserUseCase,
             },
-            auth: {
-              user,
-              session,
-            },
-          },
+          })(user),
         },
       );
       const body = result.body;
@@ -305,15 +285,11 @@ describe("users schema tests", () => {
           `,
         },
         {
-          contextValue: {
+          contextValue: createMockContextFactory({
             useCases: {
               users: mockUserUseCase,
             },
-            auth: {
-              user,
-              session,
-            },
-          },
+          })(user),
         },
       );
       const body = result.body;
@@ -349,15 +325,11 @@ describe("users schema tests", () => {
           },
         },
         {
-          contextValue: {
+          contextValue: createMockContextFactory({
             useCases: {
               users: mockUserUseCase,
             },
-            auth: {
-              user: null,
-              session,
-            },
-          },
+          })(null),
         },
       );
 
@@ -385,15 +357,11 @@ describe("users schema tests", () => {
           `,
         },
         {
-          contextValue: {
+          contextValue: createMockContextFactory({
             useCases: {
               users: mockUserUseCase,
             },
-            auth: {
-              user: user,
-              session,
-            },
-          },
+          })(user),
         },
       );
 

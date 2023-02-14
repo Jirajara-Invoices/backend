@@ -11,9 +11,12 @@ describe("context", () => {
       .setup((instance) => instance.userId)
       .returns("user-id")
       .object();
+    const sessionStore = new Mock<Express.SessionStore>().object();
     const req = new Mock<Request>()
       .setup((instance) => instance.session)
       .returns(session)
+      .setup((instance) => instance.sessionStore)
+      .returns(sessionStore)
       .object();
     const res = new Mock<Response>()
       .setup((instance) => instance)
@@ -23,10 +26,12 @@ describe("context", () => {
     const context = await contextFactory({ req, res });
 
     expect(context).toBeDefined();
+    expect(context.logger).toBeDefined();
+    expect(context.req.sessionStore).toBeDefined();
     expect(context.useCases).toBeDefined();
     expect(context.useCases.users).toBeDefined();
     expect(context.auth).toBeDefined();
     expect(context.auth.user).toBeNull();
-    expect(context.auth.session).toBe(session);
+    expect(context.req.session).toBe(session);
   });
 });
