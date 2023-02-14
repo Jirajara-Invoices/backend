@@ -7,9 +7,12 @@ import { UserUseCasePort } from "../usecases/users/interfaces";
 import { UserUseCase } from "../usecases/users/usecase";
 import { UserRepository } from "../adapters/repositories/users/users";
 import { User } from "../entities/models/users";
-import { logger } from "./winston";
 import { LoggerAdapter } from "../adapters/common/logger";
 import { LoggerUseCasePort } from "../usecases/common/interfaces";
+import { AddressUseCasePort } from "../usecases/addresses/interfaces";
+import { AddressUseCase } from "../usecases/addresses/usecase";
+import { AddressRepository } from "../adapters/repositories/addresses/addresses";
+import { logger } from "./winston";
 
 export type SessionContext = Session & Partial<SessionData>;
 
@@ -17,6 +20,7 @@ export interface GraphQLContext {
   logger: LoggerUseCasePort;
   useCases: {
     users: UserUseCasePort;
+    addresses: AddressUseCasePort;
   };
   req: Express.Request;
   auth: {
@@ -28,6 +32,16 @@ function instantiateUserUseCase(dbPool: DatabasePool, logger: LoggerUseCasePort)
   const userRepository = new UserRepository(dbPool);
 
   return new UserUseCase(userRepository, logger);
+}
+
+function instantiateAddressUseCase(
+  dbPool: DatabasePool,
+  logger: LoggerUseCasePort,
+  currentUser: User | null,
+): AddressUseCasePort {
+  const addressRepository = new AddressRepository(dbPool);
+
+  return new AddressUseCase(addressRepository, logger, currentUser);
 }
 
 async function getAuthUser(
@@ -52,14 +66,19 @@ export const createContextFactory = (
 ): ContextFunction<[ExpressContextFunctionArgument], GraphQLContext> => {
   return async ({ req }) => {
     const log = new LoggerAdapter(logger.child({ session: req.session.id }));
+
     const userUseCase = instantiateUserUseCase(dbPool, log);
+
     const user = await getAuthUser(req.session, userUseCase, log);
     userUseCase.setCurrentUser(user);
+
+    const addressUseCase = instantiateAddressUseCase(dbPool, log, user);
 
     return {
       logger: log,
       useCases: {
         users: userUseCase,
+        addresses: addressUseCase,
       },
       req,
       auth: {

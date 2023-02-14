@@ -18,6 +18,8 @@ type PageInfo {
     endCursor: String
 }
 
+##### User types
+
 enum UserRole {
     ADMIN
     USER
@@ -50,6 +52,50 @@ input FindUserInput {
     email: String
 }
 
+##### Address types
+
+enum AddressType {
+    PERSONAL
+    CLIENTS
+}
+
+type Address implements Node {
+    id: ID!
+    name: String!
+    type: AddressType!
+    user: User!
+    country: String!
+    taxId: String
+    email: String
+    number: String
+    comment: String
+    street: String
+    city: String
+    state: String
+    zipcode: String
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    deletedAt: DateTime
+}
+
+type AddressEdge {
+    cursor: String!
+    node: Address!
+}
+
+type AddressConnection {
+    edges: [AddressEdge]
+    pageInfo: PageInfo!
+}
+
+input FindAddressInput {
+    email: String
+    name: String
+    taxId: String
+    type: AddressType
+    userId: ID
+}
+
 type Query {
     currentUser: User! @auth(requires: USER)
     user(id: ID!): User! @auth(requires: ADMIN)
@@ -60,6 +106,15 @@ type Query {
         before: String,
         filter: FindUserInput!
     ): UserConnection @auth(requires: ADMIN)
+
+    address(id: ID!): Address! @auth(requires: USER)
+    addresses(
+        first: Int,
+        after: String,
+        last: Int,
+        before: String,
+        filter: FindAddressInput!
+    ): AddressConnection @auth(requires: USER)
 }
 
 input CreateUserInput {
@@ -77,6 +132,35 @@ input UpdateUserInput {
     country: String
 }
 
+input CreateAddressInput {
+    name: String!
+    type: AddressType!
+    country: String!
+    tax_id: String
+    email: String
+    number: String
+    comment: String
+    street: String
+    city: String
+    state: String
+    zipcode: String
+}
+
+input UpdateAddressInput {
+    id: ID!
+    name: String
+    type: AddressType
+    country: String
+    tax_id: String
+    email: String
+    number: String
+    comment: String
+    street: String
+    city: String
+    state: String
+    zipcode: String
+}
+
 type Mutation {
     createUser(input: CreateUserInput!): User!
     updateUser(input: UpdateUserInput!): User! @auth(requires: USER)
@@ -84,4 +168,8 @@ type Mutation {
 
     login(email: String!, password: String!): User!
     logout: Boolean! @auth(requires: USER)
+
+    createAddress(input: CreateAddressInput!): Address! @auth(requires: USER)
+    updateAddress(input: UpdateAddressInput!): Address! @auth(requires: USER)
+    deleteAddress(id: ID!): Boolean! @auth(requires: USER)
 }

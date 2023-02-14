@@ -18,7 +18,7 @@ export class AddressUseCase extends BaseUseCase implements AddressUseCasePort {
   constructor(
     private readonly repository: AddressRepositoryPort,
     private readonly logger: LoggerUseCasePort,
-    currentUser: User,
+    currentUser: User | null,
   ) {
     super(currentUser);
   }
@@ -73,12 +73,11 @@ export class AddressUseCase extends BaseUseCase implements AddressUseCasePort {
       throw new ValidationError("Invalid input for address filters", errors);
     }
 
-    if (
-      (!filter.userId && !this.isCurrentUserAdmin()) ||
-      !this.isCurrentUserAuthorized(filter.userId!)
-    ) {
-      this.logger.error(`User is not authorized to see this address`);
-      throw new ValidationError("User is not authorized to see this address", new Map());
+    if (filter.userId && !this.isCurrentUserAdmin()) {
+      this.logger.error(`User is not authorized to see this addresses`);
+      throw new ValidationError("User is not authorized to see this addresses", new Map());
+    } else {
+      filter.userId = this.getCurrentUserId();
     }
 
     return await this.repository.find(filter);

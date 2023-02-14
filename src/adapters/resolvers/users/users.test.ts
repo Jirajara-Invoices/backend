@@ -3,14 +3,15 @@ import { readFileSync } from "fs";
 import { ApolloServer } from "@apollo/server";
 import { addMocksToSchema } from "@graphql-tools/mock";
 import { makeExecutableSchema } from "@graphql-tools/schema";
+import { Mock } from "moq.ts";
+
+import { User, UserRole } from "../../../entities/models/users";
+import { UserUseCase } from "../../../usecases/users/usecase";
+import { GraphQLContext } from "../../../utilities/context";
+import { createMockContextFactory } from "../../../utilities/mock";
+import { dateScalarResolvers } from "../types/date";
 import { userQueryResolvers } from "./queries";
 import { userMutationResolvers } from "./mutations";
-import { dateScalarResolvers } from "../types/date";
-import { GraphQLContext } from "../../../utilities/context";
-import { UserUseCase } from "../../../usecases/users/usecase";
-import { Mock } from "moq.ts";
-import { User, UserRole } from "../../../entities/models/users";
-import { createMockContextFactory } from "../../../utilities/mock";
 
 const resolvers = {
   ...dateScalarResolvers,

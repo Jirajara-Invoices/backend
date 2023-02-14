@@ -96,7 +96,9 @@ export class AddressRepository implements AddressRepositoryPort {
       whereClauses.length > 0
         ? sql.fragment`WHERE ${sql.join(whereClauses, sql.unsafe`AND`)}`
         : sql.fragment``,
-      sql.fragment`ORDER BY created_at DESC`,
+      sql.fragment`ORDER BY created_at ${
+        filter.direction === "ASC" ? sql.fragment`ASC` : sql.fragment`DESC`
+      }`,
       sql.fragment`LIMIT ${filter.limit}`,
     ];
 
@@ -156,7 +158,7 @@ export class AddressRepository implements AddressRepositoryPort {
   }
 
   async delete(id: string, userId: string): Promise<void> {
-    await this.dbPool.one(
+    await this.dbPool.query(
       sql.unsafe`DELETE FROM addresses WHERE id = ${id} AND user_id = ${userId}`,
     );
   }
