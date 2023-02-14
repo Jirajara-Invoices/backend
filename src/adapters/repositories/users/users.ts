@@ -61,17 +61,13 @@ export class UserRepository implements UserRepositoryPort {
 
     const sqlQueryArray = [
       sql.fragment`SELECT * FROM users`,
+      whereClauses.length > 0
+        ? sql.fragment`WHERE ${sql.join(whereClauses, sql.unsafe` AND `)}`
+        : sql.fragment``,
       sql.fragment`ORDER BY created_at ${
         input.direction === "ASC" ? sql.fragment`ASC` : sql.fragment`DESC`
       } LIMIT ${input.limit}`,
     ];
-    if (whereClauses.length > 0) {
-      sqlQueryArray.splice(
-        1,
-        0,
-        sql.fragment`WHERE ${sql.join(whereClauses, sql.fragment` AND `)}`,
-      );
-    }
 
     const sqlQuery = sql.unsafe`${sql.join(sqlQueryArray, sql.fragment` `)}`;
 

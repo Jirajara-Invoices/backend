@@ -1,4 +1,5 @@
 import { GraphQLError } from "graphql/error";
+import { mapToArray } from "../utilities/arrays";
 
 export class ValidationError extends Error {
   private readonly errors: Map<string, string>;
@@ -31,7 +32,7 @@ export function mapGraphQLError(error: ValidationError): GraphQLError {
   return new GraphQLError(error.message, {
     extensions: {
       code: "VALIDATION_ERROR",
-      fieldErrors: Array.from(error.getFieldErrors().entries()),
+      fieldErrors: mapToArray(error.getFieldErrors()),
     },
   });
 }

@@ -1,7 +1,8 @@
-import { Logger } from "winston";
-
-import { User, UserRole } from "../../entities/models/users";
+import { User } from "../../entities/models/users";
 import { ValidationError } from "../../entities/errors";
+import { BaseUseCase } from "../common/base";
+import { LoggerUseCasePort } from "../common/interfaces";
+import { validateFiltersInput } from "../common/validators";
 import {
   CreateUserInput,
   FindUserInput,
@@ -9,29 +10,21 @@ import {
   UserRepositoryPort,
   UserUseCasePort,
 } from "./interfaces";
-import {
-  validateCreateUserInput,
-  validateFindUserInput,
-  validateLoginInput,
-  validateUpdateUserInput,
-} from "./validators";
+import { validateCreateUserInput, validateLoginInput, validateUpdateUserInput } from "./validators";
+import { mapToString } from "../../utilities/arrays";
 
-export class UserUseCase implements UserUseCasePort {
-  private currentUser: User | null = null;
-
+export class UserUseCase extends BaseUseCase implements UserUseCasePort {
   constructor(
     private readonly userRepository: UserRepositoryPort,
-    private readonly logger: Logger,
-  ) {}
-
-  setCurrentUser(user: User | null): void {
-    this.currentUser = user;
+    private readonly logger: LoggerUseCasePort,
+  ) {
+    super(null);
   }
 
   async create(input: CreateUserInput): Promise<User> {
     const errors = validateCreateUserInput(input);
     if (errors.size > 0) {
-      this.logger.error("Invalid input for user creation", Array.from(errors.entries()));
+      this.logger.error(`Invalid input for user creation: ${mapToString(errors)}`);
       throw new ValidationError("Invalid input for user creation", errors);
     }
 
@@ -41,12 +34,12 @@ export class UserUseCase implements UserUseCasePort {
   async update(input: UpdateUserInput): Promise<User> {
     const errors = validateUpdateUserInput(input);
     if (errors.size > 0) {
-      this.logger.error("Invalid input for update user", Array.from(errors.entries()));
+      this.logger.error(`Invalid input for update user: ${mapToString(errors)}`);
       throw new ValidationError("Invalid input for update user", errors);
     }
 
-    if (this.currentUser?.id !== input.id && !(this.currentUser?.role === UserRole.Admin)) {
-      this.logger.error("User is not authorized to update this user", Array.from(errors.entries()));
+    if (!this.isCurrentUserAuthorized(input.id)) {
+      this.logger.error(`User is not authorized to update this user: ${mapToString(errors)}`);
       throw new ValidationError("User is not authorized to update this user", errors);
     }
 
@@ -54,7 +47,7 @@ export class UserUseCase implements UserUseCasePort {
   }
 
   async delete(id: string): Promise<void> {
-    if (this.currentUser?.id !== id && !(this.currentUser?.role === UserRole.Admin)) {
+    if (!this.isCurrentUserAuthorized(id)) {
       this.logger.error("User is not authorized to delete this user");
       throw new ValidationError("User is not authorized to delete this user", new Map());
     }
@@ -68,14 +61,24 @@ export class UserUseCase implements UserUseCasePort {
   }
 
   async findByID(id: string): Promise<User> {
+    if (!this.isCurrentUserAdmin()) {
+      this.logger.error(`User is not authorized to find all users`);
+      throw new ValidationError("User is not authorized to find all users", new Map());
+    }
+
     return await this.userRepository.findByID(id);
   }
 
   async findAll(input: FindUserInput): Promise<User[]> {
-    const errors = validateFindUserInput(input);
+    const errors = validateFiltersInput(input);
     if (errors.size > 0) {
-      this.logger.error("Invalid input for find user", Array.from(errors.entries()));
+      this.logger.error(`Invalid input for find user: ${mapToString(errors)}`);
       throw new ValidationError("Invalid input for find user", errors);
+    }
+
+    if (!this.isCurrentUserAdmin()) {
+      this.logger.error(`User is not authorized to find all users`);
+      throw new ValidationError("User is not authorized to find all users", new Map());
     }
 
     return await this.userRepository.find(input);
@@ -84,7 +87,7 @@ export class UserUseCase implements UserUseCasePort {
   async checkCredentials(email: string, password: string): Promise<User> {
     const errors = validateLoginInput(email, password);
     if (errors.size > 0) {
-      this.logger.error("Invalid input for login", Array.from(errors.entries()));
+      this.logger.error(`Invalid input for login: ${mapToString(errors)}`);
       throw new ValidationError("Invalid input for login", errors);
     }
 

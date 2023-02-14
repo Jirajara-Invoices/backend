@@ -4,6 +4,9 @@
   "description": "",
   "main": "dist/src/index.js",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "compile": "rm -rf dist/ && tsc",
     "dev": "ROARR_LOG=true DEBUG=express-session nodemon --experimental-specifier-resolution=node ./src/index.ts",
@@ -47,7 +50,8 @@
     "rate-limiter-flexible": "^2.4.1",
     "slonik": "^33.0.6",
     "slonik-interceptor-query-logging": "^1.4.7",
-    "winston": "^3.8.2"
+    "winston": "^3.8.2",
+    "zod": "^3.19.1"
   },
   "devDependencies": {
     "@babel/core": "^7",

@@ -1,4 +1,4 @@
-import type { CreateUserInput, FindUserInput, UpdateUserInput } from "./interfaces";
+import type { CreateUserInput, UpdateUserInput } from "./interfaces";
 import { EMAIL_REGEX } from "../../entities/constants";
 
 export function validateCreateUserInput(input: CreateUserInput): Map<string, string> {
@@ -39,23 +39,6 @@ export function validateUpdateUserInput(input: UpdateUserInput): Map<string, str
 
   if (input.country && input.country.length !== 2) {
     errors.set("country", "Country must be a 2 character ISO code");
-  }
-
-  return errors;
-}
-
-export function validateFindUserInput(input: FindUserInput): Map<string, string> {
-  const errors: Map<string, string> = new Map();
-  if (!input.limit || input.limit < 1) {
-    errors.set("limit", "Limit must be at least 1");
-  }
-
-  if (input.cursor && input.cursor.length < 1 && isNaN(new Date(input.cursor).valueOf())) {
-    errors.set("cursor", "Cursor must be a valid date string");
-  }
-
-  if (!input.direction || (input.direction !== "ASC" && input.direction !== "DESC")) {
-    errors.set("direction", "Direction must be either ASC or DESC");
   }
 
   return errors;

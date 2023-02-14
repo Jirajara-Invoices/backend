@@ -1,17 +1,17 @@
 import { IMock, It, Mock, Times } from "moq.ts";
-import { Logger } from "winston";
 
-import type { CreateUserInput, FindUserInput, UserRepositoryPort } from "./interfaces";
-import { UserUseCase } from "./usecase";
 import { User, UserRole } from "../../entities/models/users";
 import { ValidationError } from "../../entities/errors";
+import { LoggerUseCasePort } from "../common/interfaces";
+import type { CreateUserInput, FindUserInput, UserRepositoryPort } from "./interfaces";
+import { UserUseCase } from "./usecase";
 
 describe("UserUseCase tests", () => {
-  let mockLogger: IMock<Logger>;
+  let mockLogger: IMock<LoggerUseCasePort>;
 
   beforeEach(() => {
-    mockLogger = new Mock<Logger>()
-      .setup((instance) => instance.error(It.IsAny(), It.IsAny()))
+    mockLogger = new Mock<LoggerUseCasePort>()
+      .setup((instance) => instance.error(It.IsAny()))
       .returns({} as any);
   });
 
@@ -180,6 +180,8 @@ describe("UserUseCase tests", () => {
         .returns(Promise.resolve(user))
         .object();
       const userUseCase = new UserUseCase(userRepository, mockLogger.object());
+      const adminUser: User = { ...user, role: UserRole.Admin };
+      userUseCase.setCurrentUser(adminUser);
       const result = await userUseCase.findByID(id);
 
       expect(result).toEqual(user);
@@ -219,6 +221,8 @@ describe("UserUseCase tests", () => {
         .returns(Promise.resolve(users))
         .object();
       const userUseCase = new UserUseCase(userRepository, mockLogger.object());
+      const adminUser: User = { ...users[0], role: UserRole.Admin };
+      userUseCase.setCurrentUser(adminUser);
       const result = await userUseCase.findAll(input);
 
       expect(result).toEqual(users);
@@ -248,6 +252,8 @@ describe("UserUseCase tests", () => {
         .returns(Promise.resolve(users))
         .object();
       const userUseCase = new UserUseCase(userRepository, mockLogger.object());
+      const adminUser: User = { ...users[0], role: UserRole.Admin };
+      userUseCase.setCurrentUser(adminUser);
       const result = await userUseCase.findAll(input);
 
       expect(result).toEqual(users);

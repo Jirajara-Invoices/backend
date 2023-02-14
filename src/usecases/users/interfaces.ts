@@ -1,5 +1,6 @@
 import { User } from "../../entities/models/users";
 import { Pagination } from "../../entities/types/pagination";
+import { BaseUseCase } from "../common/base";
 
 export interface CreateUserInput {
   name: string;
@@ -17,8 +18,7 @@ export interface FindUserInput extends Pagination {
   name?: string;
 }
 
-export interface UserUseCasePort {
-  setCurrentUser(user: User | null): void;
+export interface UserUseCasePort extends BaseUseCase {
   create(input: CreateUserInput): Promise<User>;
   update(input: UpdateUserInput): Promise<User>;
   delete(id: string): Promise<void>;
@@ -34,8 +34,4 @@ export interface UserRepositoryPort {
   findByID(id: string): Promise<User>;
   find(input: FindUserInput): Promise<User[]>;
   checkCredentials(email: string, password: string): Promise<User>;
-}
-
-export interface UserPresenterPort {
-  present(user: User): Promise<User>;
 }
