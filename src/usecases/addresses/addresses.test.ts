@@ -55,7 +55,7 @@ describe("Addresses tests suites", () => {
 
   describe("create address", () => {
     it("should create an address", async () => {
-      addressRepository.setup((x) => x.save).returns(() => Promise.resolve(address));
+      addressRepository.setup((x) => x.create).returns(() => Promise.resolve(address));
       const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
       const input: CreateAddressInput = {
         type: address.type,
@@ -76,7 +76,7 @@ describe("Addresses tests suites", () => {
     });
 
     it("should throw an error if the input is invalid", async () => {
-      addressRepository.setup((x) => x.save).returns(() => Promise.reject(ValidationError));
+      addressRepository.setup((x) => x.create).returns(() => Promise.reject(ValidationError));
       const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
       const input: CreateAddressInput = {
         type: address.type,

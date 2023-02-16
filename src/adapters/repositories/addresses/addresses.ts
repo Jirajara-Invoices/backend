@@ -108,7 +108,7 @@ export class AddressRepository implements AddressRepositoryPort {
     return addresses.rows.map(mapAddress);
   }
 
-  async save(input: CreateAddressInput, userId: string): Promise<Address> {
+  async create(input: CreateAddressInput, userId: string): Promise<Address> {
     const id = createId();
     const fieldsToUpdate = Object.keys(input).filter(
       (key) => input[key as keyof typeof input] !== undefined,

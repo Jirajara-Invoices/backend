@@ -29,7 +29,7 @@ export class AddressUseCase extends BaseUseCase implements AddressUseCasePort {
       this.logger.error(`Invalid input for address creation: ${mapToString(errors)}`);
       throw new ValidationError("Invalid input for address creation", errors);
     }
-    return await this.repository.save(input, this.getCurrentUserId());
+    return await this.repository.create(input, this.getCurrentUserId());
   }
 
   async update(input: UpdateAddressInput): Promise<Address> {
@@ -73,7 +73,7 @@ export class AddressUseCase extends BaseUseCase implements AddressUseCasePort {
       throw new ValidationError("Invalid input for address filters", errors);
     }
 
-    if (filter.userId && !this.isCurrentUserAdmin()) {
+    if (filter.userId && !this.isCurrentUserAuthorized(filter.userId)) {
       this.logger.error(`User is not authorized to see this addresses`);
       throw new ValidationError("User is not authorized to see this addresses", new Map());
     } else {

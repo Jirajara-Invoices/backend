@@ -28,7 +28,7 @@ export interface UserUseCasePort extends BaseUseCase {
 }
 
 export interface UserRepositoryPort {
-  save(input: CreateUserInput): Promise<User>;
+  create(input: CreateUserInput): Promise<User>;
   update(input: UpdateUserInput): Promise<User>;
   delete(id: string): Promise<void>;
   findByID(id: string): Promise<User>;

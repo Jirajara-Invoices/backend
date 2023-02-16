@@ -86,7 +86,7 @@ export class UserRepository implements UserRepositoryPort {
     return mapUser(user);
   }
 
-  async save(user: CreateUserInput): Promise<User> {
+  async create(user: CreateUserInput): Promise<User> {
     const id = createId();
     const password = await argon2.hash(user.password);
 

@@ -113,7 +113,7 @@ describe("AddressesRepository", () => {
         state: address.state,
         country: address.country,
       };
-      const dbAddress = await repo.save(input, address.user_id);
+      const dbAddress = await repo.create(input, address.user_id);
 
       expect(dbAddress).toEqual(address);
     });

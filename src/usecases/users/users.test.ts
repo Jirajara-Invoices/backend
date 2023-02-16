@@ -34,7 +34,7 @@ describe("UserUseCase tests", () => {
       };
 
       const userRepository = new Mock<UserRepositoryPort>()
-        .setup((instance) => instance.save(input))
+        .setup((instance) => instance.create(input))
         .returns(Promise.resolve(user))
         .object();
       const userUseCase = new UserUseCase(userRepository, mockLogger.object());
@@ -53,7 +53,7 @@ describe("UserUseCase tests", () => {
       };
 
       const userRepository = new Mock<UserRepositoryPort>()
-        .setup((instance) => instance.save(input))
+        .setup((instance) => instance.create(input))
         .returns(Promise.resolve({} as User))
         .object();
       const userUseCase = new UserUseCase(userRepository, mockLogger.object());

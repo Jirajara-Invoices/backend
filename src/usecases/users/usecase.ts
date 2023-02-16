@@ -28,7 +28,7 @@ export class UserUseCase extends BaseUseCase implements UserUseCasePort {
       throw new ValidationError("Invalid input for user creation", errors);
     }
 
-    return await this.userRepository.save(input);
+    return await this.userRepository.create(input);
   }
 
   async update(input: UpdateUserInput): Promise<User> {

@@ -171,7 +171,7 @@ describe("UsersRepository tests", () => {
         password: "password",
         country: user.country,
       };
-      const result = await userRepository.save(input);
+      const result = await userRepository.create(input);
 
       expect(result).toEqual(user);
     });

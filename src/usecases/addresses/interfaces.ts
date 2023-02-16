@@ -37,7 +37,7 @@ export interface AddressUseCasePort extends BaseUseCase {
 }
 
 export interface AddressRepositoryPort {
-  save(input: CreateAddressInput, userId: string): Promise<Address>;
+  create(input: CreateAddressInput, userId: string): Promise<Address>;
   update(input: UpdateAddressInput, userId: string): Promise<Address>;
   delete(id: string, userId: string): Promise<void>;
   findByID(id: string): Promise<Address>;
