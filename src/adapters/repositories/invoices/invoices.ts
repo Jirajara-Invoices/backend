@@ -167,24 +167,18 @@ export class InvoiceRepository implements InvoiceRepositoryPort {
     const fieldsToUpdate = Object.keys(input).filter(
       (key) => input[key as keyof typeof input] !== undefined,
     );
-    const values = [
-      ...fieldsToUpdate.map((field) => {
-        const value = input[field as keyof typeof input] || "";
-        if (value instanceof Date) {
-          return sql.date(value);
-        }
-
-        return value;
-      }),
-    ];
+    const sqlFields = fieldsToUpdate.map((field) => {
+      const value = input[field as keyof typeof input] || "";
+      if (value instanceof Date) {
+        return sql.fragment`${sql.identifier([field])} = ${sql.date(value)}}`;
+      }
+      return sql.fragment`${sql.identifier([field])} = ${value}}`;
+    });
 
     const invoice = await this.dbPool.query(
       sql.type(invoiceZodSchema)`
         UPDATE invoices
-        SET (${sql.join(
-          fieldsToUpdate.map((field) => sql.identifier([field])),
-          sql.fragment`, `,
-        )}) = (${sql.join(values, sql.fragment`, `)})
+        SET ${sql.join(sqlFields, sql.fragment`, `)}, updated_at = current_timestamp
         WHERE id = ${input.id} AND user_id = ${userId}
         RETURNING *
       `,
