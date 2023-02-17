@@ -37,8 +37,8 @@ export interface InvoiceUseCasePort extends BaseUseCase {
 }
 
 export interface InvoiceRepositoryPort {
-  create(input: CreateInvoiceInput, user_id: string): Promise<Invoice>;
-  update(input: UpdateInvoiceInput, user_id: string): Promise<Invoice>;
+  create(input: CreateInvoiceInput, userId: string): Promise<Invoice>;
+  update(input: UpdateInvoiceInput, userId: string): Promise<Invoice>;
   delete(id: string): Promise<void>;
   findByID(id: string): Promise<Invoice>;
   findAll(filter: InvoiceFilterInput): Promise<Invoice[]>;
