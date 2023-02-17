@@ -16,7 +16,7 @@ export interface TaxesFilterInput extends Pagination {
   userId?: string;
   name?: string;
   rate?: number;
-  calc_type?: TaxCalType;
+  calcType?: TaxCalType;
 }
 
 export interface TaxesUseCasePort extends BaseUseCase {

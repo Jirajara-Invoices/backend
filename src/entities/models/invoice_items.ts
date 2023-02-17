@@ -13,7 +13,7 @@ export type InvoiceItem = {
   id: string;
   invoice_id: string;
   invoice?: Invoice;
-  tax_id: string;
+  tax_id?: string;
   tax?: Tax;
   type: InvoiceItemType;
   name: string;
