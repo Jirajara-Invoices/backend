@@ -175,8 +175,8 @@ describe("Addresses tests suites", () => {
     });
   });
 
-  describe("find address by user id", () => {
-    it("should get an address", async () => {
+  describe("find address by filters", () => {
+    it("should find addresses", async () => {
       addressRepository.setup((x) => x.find).returns(() => Promise.resolve([address]));
       const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
       const filter: AddressFilterInput = {
@@ -189,7 +189,7 @@ describe("Addresses tests suites", () => {
       expect(foundAddress).toEqual([address]);
     });
 
-    it("should throw an error if the address does not belongs to the user", async () => {
+    it("should throw an error if the addresses does not belongs to the user", async () => {
       const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
       const filter: AddressFilterInput = {
         direction: "ASC",

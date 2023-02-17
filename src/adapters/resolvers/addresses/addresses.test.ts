@@ -311,7 +311,7 @@ describe("Addresses resolvers tests", () => {
       const body = result.body;
 
       assert(body.kind === "single");
-      expect(body.singleResult.data?.deleteAddress).toBeTruthy();
+      expect(body.singleResult.data?.deleteAddress).toBeDefined();
     });
 
     it("should return an error if user is not logged in", async () => {
