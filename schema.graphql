@@ -52,6 +52,21 @@ input FindUserInput {
     email: String
 }
 
+input CreateUserInput {
+    name: String!
+    email: String!
+    password: String!
+    country: String!
+}
+
+input UpdateUserInput {
+    id: ID!
+    name: String
+    email: String
+    password: String
+    country: String
+}
+
 ##### Address types
 
 enum AddressType {
@@ -96,42 +111,6 @@ input FindAddressInput {
     userId: ID
 }
 
-type Query {
-    currentUser: User! @auth(requires: USER)
-    user(id: ID!): User! @auth(requires: ADMIN)
-    users(
-        first: Int,
-        after: String,
-        last: Int,
-        before: String,
-        filter: FindUserInput!
-    ): UserConnection @auth(requires: ADMIN)
-
-    address(id: ID!): Address! @auth(requires: USER)
-    addresses(
-        first: Int,
-        after: String,
-        last: Int,
-        before: String,
-        filter: FindAddressInput!
-    ): AddressConnection @auth(requires: USER)
-}
-
-input CreateUserInput {
-    name: String!
-    email: String!
-    password: String!
-    country: String!
-}
-
-input UpdateUserInput {
-    id: ID!
-    name: String
-    email: String
-    password: String
-    country: String
-}
-
 input CreateAddressInput {
     name: String!
     type: AddressType!
@@ -161,6 +140,257 @@ input UpdateAddressInput {
     zipcode: String
 }
 
+##### Taxes types
+
+enum TaxCalcType {
+    PERCENTAGE
+    FIXED
+}
+
+type Tax implements Node {
+    id: ID!
+    user: User!
+    name: String!
+    rate: Float!
+    calcType: TaxCalcType!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    deletedAt: DateTime
+}
+
+type TaxEdge {
+    cursor: String!
+    node: Tax!
+}
+
+type TaxConnection {
+    edges: [TaxEdge]
+    pageInfo: PageInfo!
+}
+
+input FindTaxInput {
+    name: String
+    rate: Float
+    calcType: TaxCalcType
+    userId: ID
+}
+
+input CreateTaxInput {
+    name: String!
+    rate: Float!
+    calcType: TaxCalcType!
+}
+
+input UpdateTaxInput {
+    id: ID!
+    name: String
+    rate: Float
+    calcType: TaxCalcType
+}
+
+##### Invoice types
+
+enum InvoiceType {
+    INVOICE
+    QUOTE
+    RECEIPT
+    ESTIMATE
+    PROFORMA
+    DEBIT
+    CREDIT
+    BILL
+    DELIVERY_NOTE
+    PURCHASE_ORDER
+}
+
+enum InvoiceStatus {
+    DRAFT
+    SENT
+    PAID
+    OVERDUE
+    CANCELED
+}
+
+type Invoice implements Node {
+    id: ID!
+    user: User!
+    address: Address!
+    clientAddress: Address!
+    type: InvoiceType!
+    status: InvoiceStatus!
+    number: String!
+    date: DateTime!
+    dueDate: DateTime!
+    taxes: [Tax!]!
+    taxAmount: Float!
+    discount: Float!
+    subTotal: Float!
+    total: Float!
+    terms: String!
+    items: [InvoiceItem!]!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    deletedAt: DateTime
+}
+
+type InvoiceEdge {
+    cursor: String!
+    node: Invoice!
+}
+
+type InvoiceConnection {
+    edges: [InvoiceEdge]
+    pageInfo: PageInfo!
+}
+
+input FindInvoiceInput {
+    number: String
+    type: InvoiceType
+    status: InvoiceStatus
+    date: DateTime
+    dueDate: DateTime
+    addressId: ID
+    clientAddressId: ID
+    userId: ID
+}
+
+input CreateInvoiceInput {
+    addressId: ID!
+    clientAddressId: ID!
+    type: InvoiceType!
+    status: InvoiceStatus!
+    number: String!
+    date: DateTime!
+    dueDate: DateTime!
+    terms: String!
+}
+
+input UpdateInvoiceInput {
+    id: ID!
+    addressId: ID
+    clientAddressId: ID
+    type: InvoiceType
+    status: InvoiceStatus
+    number: String
+    date: DateTime
+    dueDate: DateTime
+    terms: String
+}
+
+##### Invoice item types
+
+enum InvoiceItemType {
+    PRODUCT
+    SERVICE
+    SHIPPING
+    DISCOUNT
+    TAX
+}
+
+type InvoiceItem implements Node {
+    id: ID!
+    invoice: Invoice!
+    tax: Tax
+    type: InvoiceItemType!
+    name: String!
+    description: String!
+    quantity: Float!
+    price: Float!
+    taxAmount: Float!
+    subTotal: Float!
+    total: Float!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    deletedAt: DateTime
+}
+
+type InvoiceItemEdge {
+    cursor: String!
+    node: InvoiceItem!
+}
+
+type InvoiceItemConnection {
+    edges: [InvoiceItemEdge]
+    pageInfo: PageInfo!
+}
+
+input FindInvoiceItemInput {
+    name: String
+    invoiceId: ID
+    taxId: ID
+    type: InvoiceItemType
+}
+
+input CreateInvoiceItemInput {
+    invoiceId: ID!
+    taxId: ID
+    type: InvoiceItemType!
+    name: String!
+    description: String!
+    quantity: Float!
+    price: Float!
+}
+
+input UpdateInvoiceItemInput {
+    id: ID!
+    taxId: ID
+    type: InvoiceItemType
+    name: String
+    description: String
+    quantity: Float
+    price: Float
+}
+
+##### Queries and mutations
+
+type Query {
+    currentUser: User! @auth(requires: USER)
+    user(id: ID!): User! @auth(requires: ADMIN)
+    users(
+        first: Int,
+        after: String,
+        last: Int,
+        before: String,
+        filter: FindUserInput!
+    ): UserConnection @auth(requires: ADMIN)
+
+    address(id: ID!): Address! @auth(requires: USER)
+    addresses(
+        first: Int,
+        after: String,
+        last: Int,
+        before: String,
+        filter: FindAddressInput!
+    ): AddressConnection @auth(requires: USER)
+
+    tax(id: ID!): Tax! @auth(requires: USER)
+    taxes(
+        first: Int,
+        after: String,
+        last: Int,
+        before: String,
+        filter: FindTaxInput!
+    ): TaxConnection @auth(requires: USER)
+
+    invoice(id: ID!): Invoice! @auth(requires: USER)
+    invoices(
+        first: Int,
+        after: String,
+        last: Int,
+        before: String,
+        filter: FindInvoiceInput!
+    ): InvoiceConnection @auth(requires: USER)
+
+    invoiceItem(id: ID!): InvoiceItem! @auth(requires: USER)
+    invoiceItems(
+        first: Int,
+        after: String,
+        last: Int,
+        before: String,
+        filter: FindInvoiceItemInput!
+    ): InvoiceItemConnection @auth(requires: USER)
+}
+
 type Mutation {
     createUser(input: CreateUserInput!): User!
     updateUser(input: UpdateUserInput!): User! @auth(requires: USER)
@@ -172,4 +402,16 @@ type Mutation {
     createAddress(input: CreateAddressInput!): Address! @auth(requires: USER)
     updateAddress(input: UpdateAddressInput!): Address! @auth(requires: USER)
     deleteAddress(id: ID!): Boolean! @auth(requires: USER)
+
+    createTax(input: CreateTaxInput!): Tax! @auth(requires: USER)
+    updateTax(input: UpdateTaxInput!): Tax! @auth(requires: USER)
+    deleteTax(id: ID!): Boolean! @auth(requires: USER)
+
+    createInvoice(input: CreateInvoiceInput!): Invoice! @auth(requires: USER)
+    updateInvoice(input: UpdateInvoiceInput!): Invoice! @auth(requires: USER)
+    deleteInvoice(id: ID!): Boolean! @auth(requires: USER)
+
+    createInvoiceItem(input: CreateInvoiceItemInput!): InvoiceItem! @auth(requires: USER)
+    updateInvoiceItem(input: UpdateInvoiceItemInput!): InvoiceItem! @auth(requires: USER)
+    deleteInvoiceItem(id: ID!): Boolean! @auth(requires: USER)
 }

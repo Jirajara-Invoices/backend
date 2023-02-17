@@ -12,9 +12,21 @@ import { createId } from "@paralleldrive/cuid2";
 const invoiceItemZodSchema = z.object({
   id: z.string(),
   invoice_id: z.string(),
-  type: z.enum<InvoiceItemType, [InvoiceItemType.Service, InvoiceItemType.Product]>([
+  type: z.enum<
+    InvoiceItemType,
+    [
+      InvoiceItemType.Service,
+      InvoiceItemType.Product,
+      InvoiceItemType.Shipping,
+      InvoiceItemType.Discount,
+      InvoiceItemType.Tax,
+    ]
+  >([
     InvoiceItemType.Service,
     InvoiceItemType.Product,
+    InvoiceItemType.Shipping,
+    InvoiceItemType.Discount,
+    InvoiceItemType.Tax,
   ]),
   name: z.string(),
   description: z.string(),
