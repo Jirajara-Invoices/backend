@@ -30,7 +30,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
       throw new ValidationError("Invalid input for invoice creation", errors);
     }
 
-    return await this.repository.create(input);
+    return await this.repository.create(input, this.getCurrentUserId());
   }
   async update(input: UpdateInvoiceInput): Promise<Invoice> {
     const invoice = await this.repository.findByID(input.id);
@@ -45,7 +45,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
       throw new ValidationError("Invalid input for update invoice", errors);
     }
 
-    return await this.repository.update(input);
+    return await this.repository.update(input, this.getCurrentUserId());
   }
   async delete(id: string): Promise<void> {
     const invoice = await this.repository.findByID(id);

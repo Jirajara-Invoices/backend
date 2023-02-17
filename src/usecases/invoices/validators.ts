@@ -3,9 +3,6 @@ import { CreateInvoiceInput, UpdateInvoiceInput } from "./interfaces";
 
 export function validateCreateInvoiceInput(input: CreateInvoiceInput): Map<string, string> {
   const errors: Map<string, string> = new Map();
-  if (!input.user_id) {
-    errors.set("user_id", "A user id is required");
-  }
   if (!input.address_id) {
     errors.set("address_id", "An address id is required");
   }

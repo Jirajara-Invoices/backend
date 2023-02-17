@@ -55,34 +55,16 @@ describe("Invoices tests suites", () => {
       invoiceRepository.setup((x) => x.create).returns(() => Promise.resolve(invoice));
       const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-unused-vars
-      const { id, created_at, updated_at, deleted_at, ...input } = invoice;
+      const { id, created_at, updated_at, deleted_at, user_id, ...input } = invoice;
       const result = await invoiceUseCase.create(input);
 
       expect(result).toEqual(invoice);
-    });
-
-    it("should throw an error if the user_id is not provided", async () => {
-      invoiceRepository.setup((x) => x.create).returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
-      const input: CreateInvoiceInput = {
-        user_id: "",
-        address_id: "1",
-        client_address_id: "2",
-        type: InvoiceType.Invoice,
-        number: "12345",
-        date: new Date(),
-        due_date: new Date(),
-        status: InvoiceStatus.Draft,
-        terms: "",
-      };
-      await expect(invoiceUseCase.create(input)).rejects.toThrowError(ValidationError);
     });
 
     it("should throw an error if the address_id is not provided", async () => {
       invoiceRepository.setup((x) => x.create).returns(() => Promise.resolve(invoice));
       const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
       const input: CreateInvoiceInput = {
-        user_id: "1",
         address_id: "",
         client_address_id: "2",
         type: InvoiceType.Invoice,
@@ -99,7 +81,6 @@ describe("Invoices tests suites", () => {
       invoiceRepository.setup((x) => x.create).returns(() => Promise.resolve(invoice));
       const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
       const input: CreateInvoiceInput = {
-        user_id: "1",
         address_id: "1",
         client_address_id: "",
         type: InvoiceType.Invoice,
@@ -116,7 +97,6 @@ describe("Invoices tests suites", () => {
       invoiceRepository.setup((x) => x.create).returns(() => Promise.resolve(invoice));
       const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
       const input: CreateInvoiceInput = {
-        user_id: "1",
         address_id: "1",
         client_address_id: "2",
         type: InvoiceType.Invoice,

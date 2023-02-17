@@ -3,7 +3,6 @@ import { Invoice, InvoiceStatus, InvoiceType } from "../../entities/models/invoi
 import { BaseUseCase } from "../common/base";
 
 export interface CreateInvoiceInput {
-  user_id: string;
   address_id: string;
   client_address_id: string;
   type: InvoiceType;
@@ -14,7 +13,7 @@ export interface CreateInvoiceInput {
   terms: string;
 }
 
-export interface UpdateInvoiceInput extends Omit<Partial<CreateInvoiceInput>, "user_id"> {
+export interface UpdateInvoiceInput extends Partial<CreateInvoiceInput> {
   id: string;
 }
 
@@ -38,8 +37,8 @@ export interface InvoiceUseCasePort extends BaseUseCase {
 }
 
 export interface InvoiceRepositoryPort {
-  create(input: CreateInvoiceInput): Promise<Invoice>;
-  update(input: UpdateInvoiceInput): Promise<Invoice>;
+  create(input: CreateInvoiceInput, user_id: string): Promise<Invoice>;
+  update(input: UpdateInvoiceInput, user_id: string): Promise<Invoice>;
   delete(id: string): Promise<void>;
   findByID(id: string): Promise<Invoice>;
   findAll(filter: InvoiceFilterInput): Promise<Invoice[]>;
