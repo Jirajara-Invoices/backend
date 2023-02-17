@@ -73,8 +73,8 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
     }
 
     if (filter.userId && !this.isCurrentUserAuthorized(filter.userId)) {
-      this.logger.error(`User is not authorized to update this invoice`);
-      throw new ValidationError("User is not authorized to update this invoice", new Map());
+      this.logger.error(`User is not authorized to get invoices for this user`);
+      throw new ValidationError("User is not authorized to get invoices for this user", new Map());
     } else {
       filter.userId = this.getCurrentUserId();
     }

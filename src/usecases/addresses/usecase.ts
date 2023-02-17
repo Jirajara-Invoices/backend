@@ -74,8 +74,8 @@ export class AddressUseCase extends BaseUseCase implements AddressUseCasePort {
     }
 
     if (filter.userId && !this.isCurrentUserAuthorized(filter.userId)) {
-      this.logger.error(`User is not authorized to see this addresses`);
-      throw new ValidationError("User is not authorized to see this addresses", new Map());
+      this.logger.error(`User is not authorized to see these addresses`);
+      throw new ValidationError("User is not authorized to see these addresses", new Map());
     } else {
       filter.userId = this.getCurrentUserId();
     }
