@@ -32,9 +32,9 @@ export interface InvoiceItemUseCasePort extends BaseUseCase {
 }
 
 export interface InvoiceItemRepositoryPort {
-  create(input: CreateItemInput, user_id: string): Promise<InvoiceItem>;
-  update(input: UpdateItemInput, user_id: string): Promise<InvoiceItem>;
-  delete(id: string, user_id: string): Promise<void>;
-  findByID(id: string, user_id: string | null): Promise<InvoiceItem>;
-  findAll(filter: ItemsFilterInput, user_id: string | null): Promise<InvoiceItem[]>;
+  create(input: CreateItemInput): Promise<InvoiceItem>;
+  update(input: UpdateItemInput, userId: string): Promise<InvoiceItem>;
+  delete(id: string, userId: string): Promise<void>;
+  findByID(id: string, userId: string | null): Promise<InvoiceItem>;
+  findAll(filter: ItemsFilterInput, userId: string | null): Promise<InvoiceItem[]>;
 }

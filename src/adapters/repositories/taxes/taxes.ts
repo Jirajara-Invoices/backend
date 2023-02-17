@@ -6,14 +6,14 @@ import {
   TaxesRepositoryPort,
   UpdateTaxInput,
 } from "../../../usecases/taxes/interfaces";
-import { Tax, TaxCalType } from "../../../entities/models/taxes";
+import { Tax, TaxCalcType } from "../../../entities/models/taxes";
 
 const taxZodSchema = z.object({
   id: z.string(),
   user_id: z.string(),
-  calc_type: z.enum<TaxCalType, [TaxCalType.Percentage, TaxCalType.Fixed]>([
-    TaxCalType.Percentage,
-    TaxCalType.Fixed,
+  calc_type: z.enum<TaxCalcType, [TaxCalcType.Percentage, TaxCalcType.Fixed]>([
+    TaxCalcType.Percentage,
+    TaxCalcType.Fixed,
   ]),
   name: z.string(),
   rate: z.number(),

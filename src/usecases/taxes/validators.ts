@@ -1,5 +1,5 @@
 import { CreateTaxInput, UpdateTaxInput } from "./interfaces";
-import { TaxCalType } from "../../entities/models/taxes";
+import { TaxCalcType } from "../../entities/models/taxes";
 
 export function validateCreateTaxInput(input: CreateTaxInput): Map<string, string> {
   const errors: Map<string, string> = new Map();
@@ -9,7 +9,7 @@ export function validateCreateTaxInput(input: CreateTaxInput): Map<string, strin
   if (!input.rate) {
     errors.set("rate", "A rate is required");
   }
-  if (!input.calc_type || !(Object.values(TaxCalType) as string[]).includes(input.calc_type)) {
+  if (!input.calc_type || !(Object.values(TaxCalcType) as string[]).includes(input.calc_type)) {
     errors.set("calc_type", "A calculation type is required");
   }
 
@@ -22,7 +22,7 @@ export function validateUpdateTaxInput(input: UpdateTaxInput): Map<string, strin
     errors.set("id", "An id is required");
   }
 
-  if (input.calc_type && !(Object.values(TaxCalType) as string[]).includes(input.calc_type)) {
+  if (input.calc_type && !(Object.values(TaxCalcType) as string[]).includes(input.calc_type)) {
     errors.set("calc_type", "A calc_type is required");
   }
 

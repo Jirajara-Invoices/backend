@@ -1,6 +1,6 @@
 import { IMock, It, Mock } from "moq.ts";
 import { User, UserRole } from "../../entities/models/users";
-import { Tax, TaxCalType } from "../../entities/models/taxes";
+import { Tax, TaxCalcType } from "../../entities/models/taxes";
 import { LoggerUseCasePort } from "../common/interfaces";
 import {
   CreateTaxInput,
@@ -38,7 +38,7 @@ describe("taxes test suites", () => {
       user_id: currentUser.id,
       name: "name",
       rate: 1,
-      calc_type: TaxCalType.Fixed,
+      calc_type: TaxCalcType.Fixed,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: undefined,
@@ -53,7 +53,7 @@ describe("taxes test suites", () => {
       const input: CreateTaxInput = {
         name: "name",
         rate: 1,
-        calc_type: TaxCalType.Fixed,
+        calc_type: TaxCalcType.Fixed,
       };
 
       const result = await taxesUseCase.create(input);
@@ -66,7 +66,7 @@ describe("taxes test suites", () => {
       const input: CreateTaxInput = {
         name: "",
         rate: 1,
-        calc_type: TaxCalType.Fixed,
+        calc_type: TaxCalcType.Fixed,
       };
 
       await expect(taxesUseCase.create(input)).rejects.toThrowError(ValidationError);
@@ -77,7 +77,7 @@ describe("taxes test suites", () => {
       const input: CreateTaxInput = {
         name: "name",
         rate: 0,
-        calc_type: TaxCalType.Fixed,
+        calc_type: TaxCalcType.Fixed,
       };
 
       await expect(taxesUseCase.create(input)).rejects.toThrowError(ValidationError);

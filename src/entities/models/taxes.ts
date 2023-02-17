@@ -1,6 +1,6 @@
 import { User } from "./users";
 
-export enum TaxCalType {
+export enum TaxCalcType {
   Percentage = "percentage",
   Fixed = "fixed",
 }
@@ -11,7 +11,7 @@ export type Tax = {
   user?: User;
   name: string;
   rate: number;
-  calc_type: TaxCalType;
+  calc_type: TaxCalcType;
   created_at: Date;
   updated_at: Date;
   deleted_at?: Date;

@@ -1,5 +1,5 @@
 import { QueryResultRow, NotFoundError } from "slonik";
-import { Tax, TaxCalType } from "../../../entities/models/taxes";
+import { Tax, TaxCalcType } from "../../../entities/models/taxes";
 import { makePool } from "../../../utilities/mock";
 import { TaxRepository } from "./taxes";
 import {
@@ -16,7 +16,7 @@ describe("TaxRepository", () => {
     tax = {
       id: "1",
       user_id: "1",
-      calc_type: TaxCalType.Fixed,
+      calc_type: TaxCalcType.Fixed,
       name: "tax",
       rate: 10,
       created_at: new Date(),
@@ -82,7 +82,7 @@ describe("TaxRepository", () => {
       const dbPool = makePool(taxResult);
       const repo = new TaxRepository(dbPool);
       const input: CreateTaxInput = {
-        calc_type: TaxCalType.Fixed,
+        calc_type: TaxCalcType.Fixed,
         name: tax.name,
         rate: tax.rate,
       };
@@ -97,7 +97,7 @@ describe("TaxRepository", () => {
       const repo = new TaxRepository(dbPool);
       const input: UpdateTaxInput = {
         id: tax.id,
-        calc_type: TaxCalType.Fixed,
+        calc_type: TaxCalcType.Fixed,
       };
       const dbTax = await repo.update(input, tax.user_id);
       expect(dbTax).toEqual(tax);

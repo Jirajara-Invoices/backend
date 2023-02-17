@@ -1,11 +1,11 @@
-import { Tax, TaxCalType } from "../../entities/models/taxes";
+import { Tax, TaxCalcType } from "../../entities/models/taxes";
 import { BaseUseCase } from "../common/base";
 import { Pagination } from "../../entities/types/pagination";
 
 export interface CreateTaxInput {
   name: string;
   rate: number;
-  calc_type: TaxCalType;
+  calc_type: TaxCalcType;
 }
 
 export interface UpdateTaxInput extends Partial<CreateTaxInput> {
@@ -16,7 +16,7 @@ export interface TaxesFilterInput extends Pagination {
   userId?: string;
   name?: string;
   rate?: number;
-  calcType?: TaxCalType;
+  calcType?: TaxCalcType;
 }
 
 export interface TaxesUseCasePort extends BaseUseCase {
