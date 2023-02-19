@@ -6,23 +6,23 @@ import { makeExecutableSchema } from "@graphql-tools/schema";
 import { User, UserRole } from "../../../entities/models/users";
 import { GraphQLContext } from "../../../utilities/context";
 import { createAuthDirective } from "../../../utilities/auth";
+import { InvoiceItem, InvoiceItemType } from "../../../entities/models/invoice_items";
 import { resolvers } from "../index";
-import { Invoice, InvoiceStatus, InvoiceType } from "../../../entities/models/invoice";
 import { createMockContextFactory } from "../../../utilities/mock";
 
 const typeDefs = readFileSync("./schema.graphql", "utf8");
 
-const INVOICE_QUERY = `
-  query invoice($id: ID!) {
-    invoice(id: $id) {
+const INVOICE_ITEM_QUERY = `
+  query invoiceItem($id: ID!) {
+    invoiceItem(id: $id) {
       id
     }
   }
 `;
 
-const INVOICES_QUERY = `
-  query invoices($first: Int, $after: String, $last: Int, $before: String, $filter: FindInvoiceInput!) {
-    invoices(first: $first, after: $after, last: $last, before: $before, filter: $filter) {
+const INVOICE_ITEMS_QUERY = `
+  query invoiceItems($first: Int, $after: String, $last: Int, $before: String, $filter: FindInvoiceItemInput!) {
+    invoiceItems(first: $first, after: $after, last: $last, before: $before, filter: $filter) {
       edges {
         node {
           id
@@ -32,32 +32,32 @@ const INVOICES_QUERY = `
   }
 `;
 
-const CREATE_INVOICE_MUTATION = `
-  mutation createInvoice($input: CreateInvoiceInput!) {
-    createInvoice(input: $input) {
+const CREATE_INVOICE_ITEM_MUTATION = `
+  mutation createInvoiceItem($input: CreateInvoiceItemInput!) {
+    createInvoiceItem(input: $input) {
       id
     }
   }
 `;
 
-const UPDATE_INVOICE_MUTATION = `
-  mutation updateInvoice($input: UpdateInvoiceInput!) {
-    updateInvoice(input: $input) {
+const UPDATE_INVOICE_ITEM_MUTATION = `
+  mutation updateInvoiceItem($input: UpdateInvoiceItemInput!) {
+    updateInvoiceItem(input: $input) {
       id
     }
   }
 `;
 
-const DELETE_INVOICE_MUTATION = `
-  mutation deleteInvoice($id: ID!) {
-    deleteInvoice(id: $id)
+const DELETE_INVOICE_ITEM_MUTATION = `
+  mutation deleteInvoiceItem($id: ID!) {
+    deleteInvoiceItem(id: $id)
   }
 `;
 
-describe("Invoices resolvers tests", () => {
+describe("InvoiceItems resolvers tests", () => {
   let server: ApolloServer<GraphQLContext>;
   let user: User;
-  let invoice: Invoice;
+  let invoiceItem: InvoiceItem;
 
   beforeAll(() => {
     server = new ApolloServer<GraphQLContext>({
@@ -79,29 +79,26 @@ describe("Invoices resolvers tests", () => {
       updated_at: new Date(),
     };
 
-    invoice = {
+    invoiceItem = {
       id: "1",
-      address_id: "1",
-      client_address_id: "2",
-      user_id: user.id,
-      type: InvoiceType.Invoice,
-      status: InvoiceStatus.Draft,
-      number: "1",
-      date: new Date(),
-      due_date: new Date(),
-      terms: "30 days",
+      invoice_id: "1",
+      name: "Invoice Item Name",
+      description: "Invoice Item Description",
+      quantity: 1,
+      price: 1,
+      type: InvoiceItemType.Product,
       created_at: new Date(),
       updated_at: new Date(),
       deleted_at: undefined,
     };
   });
 
-  describe("invoice query", () => {
-    it("should return a tax", async () => {
+  describe("invoice item query", () => {
+    it("should return an invoice item", async () => {
       const result = await server.executeOperation(
         {
-          query: INVOICE_QUERY,
-          variables: { id: invoice.id },
+          query: INVOICE_ITEM_QUERY,
+          variables: { id: invoiceItem.id },
         },
         {
           contextValue: createMockContextFactory(null)(user),
@@ -110,14 +107,14 @@ describe("Invoices resolvers tests", () => {
       const body = result.body;
 
       assert(body.kind === "single");
-      expect((body.singleResult.data?.invoice as Invoice).id).toBeTruthy();
+      expect((body.singleResult.data?.invoiceItem as InvoiceItem).id).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: INVOICE_QUERY,
-          variables: { id: invoice.id },
+          query: INVOICE_ITEM_QUERY,
+          variables: { id: invoiceItem.id },
         },
         {
           contextValue: createMockContextFactory(null)(null),
@@ -131,18 +128,12 @@ describe("Invoices resolvers tests", () => {
     });
   });
 
-  describe("invoices query", () => {
-    it("should return a list of invoices", async () => {
+  describe("invoice items query", () => {
+    it("should return a list of invoice items", async () => {
       const result = await server.executeOperation(
         {
-          query: INVOICES_QUERY,
-          variables: {
-            first: 10,
-            filter: {
-              type: InvoiceType.Invoice.toUpperCase(),
-              status: InvoiceStatus.Draft.toUpperCase(),
-            },
-          },
+          query: INVOICE_ITEMS_QUERY,
+          variables: { filter: { invoiceId: invoiceItem.invoice_id } },
         },
         {
           contextValue: createMockContextFactory(null)(user),
@@ -152,21 +143,16 @@ describe("Invoices resolvers tests", () => {
 
       assert(body.kind === "single");
       expect(
-        (body.singleResult.data?.invoices as { edges: { node: Invoice }[] }).edges[0].node.id,
+        (body.singleResult.data?.invoiceItems as { edges: { node: InvoiceItem }[] }).edges[0].node
+          .id,
       ).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: INVOICES_QUERY,
-          variables: {
-            first: 10,
-            filter: {
-              type: InvoiceType.Invoice.toUpperCase(),
-              status: InvoiceStatus.Draft.toUpperCase(),
-            },
-          },
+          query: INVOICE_ITEMS_QUERY,
+          variables: { filter: { invoiceId: invoiceItem.invoice_id } },
         },
         {
           contextValue: createMockContextFactory(null)(null),
@@ -176,25 +162,23 @@ describe("Invoices resolvers tests", () => {
 
       assert(body.kind === "single");
       expect(body.singleResult.errors).toBeTruthy();
-      expect(body.singleResult.data?.invoices).toBeNull();
+      expect(body.singleResult.data?.invoiceItems).toBeNull();
     });
   });
 
-  describe("createInvoice mutation", () => {
-    it("should create an invoice", async () => {
+  describe("create invoice item mutation", () => {
+    it("should create an invoice item", async () => {
       const result = await server.executeOperation(
         {
-          query: CREATE_INVOICE_MUTATION,
+          query: CREATE_INVOICE_ITEM_MUTATION,
           variables: {
             input: {
-              addressId: invoice.address_id,
-              clientAddressId: invoice.client_address_id,
-              type: invoice.type.toUpperCase(),
-              status: invoice.status.toUpperCase(),
-              number: invoice.number,
-              date: invoice.date,
-              dueDate: invoice.due_date,
-              terms: invoice.terms,
+              invoiceId: invoiceItem.invoice_id,
+              name: invoiceItem.name,
+              description: invoiceItem.description,
+              quantity: invoiceItem.quantity,
+              price: invoiceItem.price,
+              type: invoiceItem.type.toUpperCase(),
             },
           },
         },
@@ -205,23 +189,21 @@ describe("Invoices resolvers tests", () => {
       const body = result.body;
 
       assert(body.kind === "single");
-      expect((body.singleResult.data?.createInvoice as Invoice).id).toBeTruthy();
+      expect((body.singleResult.data?.createInvoiceItem as InvoiceItem).id).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: CREATE_INVOICE_MUTATION,
+          query: CREATE_INVOICE_ITEM_MUTATION,
           variables: {
             input: {
-              addressId: invoice.address_id,
-              clientAddressId: invoice.client_address_id,
-              type: invoice.type.toUpperCase(),
-              status: invoice.status.toUpperCase(),
-              number: invoice.number,
-              date: invoice.date,
-              dueDate: invoice.due_date,
-              terms: invoice.terms,
+              invoiceId: invoiceItem.invoice_id,
+              name: invoiceItem.name,
+              description: invoiceItem.description,
+              quantity: invoiceItem.quantity,
+              price: invoiceItem.price,
+              type: invoiceItem.type.toUpperCase(),
             },
           },
         },
@@ -237,15 +219,15 @@ describe("Invoices resolvers tests", () => {
     });
   });
 
-  describe("updateInvoice mutation", () => {
-    it("should update an invoice", async () => {
+  describe("update invoice item mutation", () => {
+    it("should update an invoice item", async () => {
       const result = await server.executeOperation(
         {
-          query: UPDATE_INVOICE_MUTATION,
+          query: UPDATE_INVOICE_ITEM_MUTATION,
           variables: {
             input: {
-              id: invoice.id,
-              number: invoice.number + "1",
+              id: invoiceItem.id,
+              name: "New Invoice Item Name",
             },
           },
         },
@@ -256,17 +238,17 @@ describe("Invoices resolvers tests", () => {
       const body = result.body;
 
       assert(body.kind === "single");
-      expect((body.singleResult.data?.updateInvoice as Invoice).id).toBeTruthy();
+      expect((body.singleResult.data?.updateInvoiceItem as InvoiceItem).id).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: UPDATE_INVOICE_MUTATION,
+          query: UPDATE_INVOICE_ITEM_MUTATION,
           variables: {
             input: {
-              id: invoice.id,
-              number: invoice.number + "1",
+              id: invoiceItem.id,
+              name: "New Invoice Item Name",
             },
           },
         },
@@ -282,13 +264,13 @@ describe("Invoices resolvers tests", () => {
     });
   });
 
-  describe("deleteInvoice mutation", () => {
-    it("should delete an invoice", async () => {
+  describe("delete invoice item mutation", () => {
+    it("should delete an invoice item", async () => {
       const result = await server.executeOperation(
         {
-          query: DELETE_INVOICE_MUTATION,
+          query: DELETE_INVOICE_ITEM_MUTATION,
           variables: {
-            id: invoice.id,
+            id: invoiceItem.id,
           },
         },
         {
@@ -298,15 +280,15 @@ describe("Invoices resolvers tests", () => {
       const body = result.body;
 
       assert(body.kind === "single");
-      expect(body.singleResult.data?.deleteInvoice as Invoice).toBeDefined();
+      expect(body.singleResult.data?.deleteInvoiceItem).toBeDefined();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: DELETE_INVOICE_MUTATION,
+          query: DELETE_INVOICE_ITEM_MUTATION,
           variables: {
-            id: invoice.id,
+            id: invoiceItem.id,
           },
         },
         {

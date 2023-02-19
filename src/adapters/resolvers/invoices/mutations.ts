@@ -85,6 +85,7 @@ export const invoiceMutationResolvers = {
 
     try {
       await useCase.delete(id);
+
       return true;
     } catch (error) {
       if (error instanceof ValidationError) {
