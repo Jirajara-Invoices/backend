@@ -8,6 +8,9 @@ import { addressTypeResolvers } from "./addresses/types";
 import { taxQueryResolvers } from "./taxes/queries";
 import { taxMutationResolvers } from "./taxes/mutations";
 import { taxTypeResolvers } from "./taxes/types";
+import { invoiceQueryResolvers } from "./invoices/queries";
+import { invoiceMutationResolvers } from "./invoices/mutations";
+import { invoiceTypeResolvers } from "./invoices/types";
 
 export const resolvers = {
   ...dateScalarResolvers,
@@ -15,13 +18,16 @@ export const resolvers = {
     ...userQueryResolvers,
     ...addressQueryResolvers,
     ...taxQueryResolvers,
+    ...invoiceQueryResolvers,
   },
   Mutation: {
     ...userMutationResolvers,
     ...addressMutationResolvers,
     ...taxMutationResolvers,
+    ...invoiceMutationResolvers,
   },
   User: userTypeResolvers,
   Address: addressTypeResolvers,
   Tax: taxTypeResolvers,
+  Invoice: invoiceTypeResolvers,
 };

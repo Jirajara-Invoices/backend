@@ -7,22 +7,23 @@ import { User, UserRole } from "../../../entities/models/users";
 import { GraphQLContext } from "../../../utilities/context";
 import { createAuthDirective } from "../../../utilities/auth";
 import { resolvers } from "../index";
-import { Tax, TaxCalcType } from "../../../entities/models/taxes";
+import { Invoice, InvoiceStatus, InvoiceType } from "../../../entities/models/invoice";
+import { describe } from "node:test";
 import { createMockContextFactory } from "../../../utilities/mock";
 
 const typeDefs = readFileSync("./schema.graphql", "utf8");
 
-const TAX_QUERY = `
-  query tax($id: ID!) {
-    tax(id: $id) {
+const INVOICE_QUERY = `
+  query invoice($id: ID!) {
+    invoice(id: $id) {
       id
     }
   }
 `;
 
-const TAXES_QUERY = `
-  query taxes($first: Int, $after: String, $last: Int, $before: String, $filter: FindTaxInput!) {
-    taxes(first: $first, after: $after, last: $last, before: $before, filter: $filter) {
+const INVOICES_QUERY = `
+  query invoices($first: Int, $after: String, $last: Int, $before: String, $filter: FindInvoiceInput!) {
+    invoices(first: $first, after: $after, last: $last, before: $before, filter: $filter) {
       edges {
         node {
           id
@@ -32,32 +33,32 @@ const TAXES_QUERY = `
   }
 `;
 
-const CREATE_TAX_MUTATION = `
-  mutation createTax($input: CreateTaxInput!) {
-    createTax(input: $input) {
+const CREATE_INVOICE_MUTATION = `
+  mutation createInvoice($input: CreateInvoiceInput!) {
+    createInvoice(input: $input) {
       id
     }
   }
 `;
 
-const UPDATE_TAX_MUTATION = `
-  mutation updateTax($input: UpdateTaxInput!) {
-    updateTax(input: $input) {
+const UPDATE_INVOICE_MUTATION = `
+  mutation updateInvoice($input: UpdateInvoiceInput!) {
+    updateInvoice(input: $input) {
       id
     }
   }
 `;
 
-const DELETE_TAX_MUTATION = `
-  mutation deleteTax($id: ID!) {
-    deleteTax(id: $id)
+const DELETE_INVOICE_MUTATION = `
+  mutation deleteInvoice($id: ID!) {
+    deleteInvoice(id: $id)
   }
 `;
 
-describe("Taxes resolvers tests", () => {
+describe("Invoices resolvers tests", () => {
   let server: ApolloServer<GraphQLContext>;
   let user: User;
-  let tax: Tax;
+  let invoice: Invoice;
 
   beforeAll(() => {
     server = new ApolloServer<GraphQLContext>({
@@ -79,25 +80,29 @@ describe("Taxes resolvers tests", () => {
       updated_at: new Date(),
     };
 
-    tax = {
+    invoice = {
       id: "1",
-      name: "IVA",
-      rate: 12,
-      calc_type: TaxCalcType.Percentage,
+      address_id: "1",
+      client_address_id: "2",
       user_id: user.id,
+      type: InvoiceType.Invoice,
+      status: InvoiceStatus.Draft,
+      number: "1",
+      date: new Date(),
+      due_date: new Date(),
+      terms: "30 days",
       created_at: new Date(),
       updated_at: new Date(),
+      deleted_at: undefined,
     };
   });
 
-  describe("tax query", () => {
+  describe("invoice query", () => {
     it("should return a tax", async () => {
       const result = await server.executeOperation(
         {
-          query: TAX_QUERY,
-          variables: {
-            id: tax.id,
-          },
+          query: INVOICE_QUERY,
+          variables: { id: invoice.id },
         },
         {
           contextValue: createMockContextFactory(null)(user),
@@ -106,16 +111,14 @@ describe("Taxes resolvers tests", () => {
       const body = result.body;
 
       assert(body.kind === "single");
-      expect((body.singleResult.data?.tax as Tax).id).toBeTruthy();
+      expect((body.singleResult.data?.invoice as Invoice).id).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: TAX_QUERY,
-          variables: {
-            id: tax.id,
-          },
+          query: INVOICE_QUERY,
+          variables: { id: invoice.id },
         },
         {
           contextValue: createMockContextFactory(null)(null),
@@ -129,15 +132,16 @@ describe("Taxes resolvers tests", () => {
     });
   });
 
-  describe("taxes query", () => {
-    it("should return a list of taxes", async () => {
+  describe("invoices query", () => {
+    it("should return a list of invoices", async () => {
       const result = await server.executeOperation(
         {
-          query: TAXES_QUERY,
+          query: INVOICES_QUERY,
           variables: {
-            first: 1,
+            first: 10,
             filter: {
-              name: "IVA",
+              type: InvoiceType.Invoice.toUpperCase(),
+              status: InvoiceStatus.Draft.toUpperCase(),
             },
           },
         },
@@ -149,18 +153,19 @@ describe("Taxes resolvers tests", () => {
 
       assert(body.kind === "single");
       expect(
-        (body.singleResult.data?.taxes as { edges: { node: Tax }[] }).edges[0].node.id,
+        (body.singleResult.data?.invoices as { edges: { node: Invoice }[] }).edges[0].node.id,
       ).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: TAXES_QUERY,
+          query: INVOICES_QUERY,
           variables: {
-            first: 1,
+            first: 10,
             filter: {
-              name: "IVA",
+              type: InvoiceType.Invoice.toUpperCase(),
+              status: InvoiceStatus.Draft.toUpperCase(),
             },
           },
         },
@@ -172,20 +177,25 @@ describe("Taxes resolvers tests", () => {
 
       assert(body.kind === "single");
       expect(body.singleResult.errors).toBeTruthy();
-      expect(body.singleResult.data?.taxes).toBeNull();
+      expect(body.singleResult.data?.invoices).toBeNull();
     });
   });
 
-  describe("createTax mutation", () => {
-    it("should create a tax", async () => {
+  describe("createInvoice mutation", () => {
+    it("should create an invoice", async () => {
       const result = await server.executeOperation(
         {
-          query: CREATE_TAX_MUTATION,
+          query: CREATE_INVOICE_MUTATION,
           variables: {
             input: {
-              name: tax.name,
-              rate: tax.rate,
-              calcType: tax.calc_type.toUpperCase(),
+              addressId: invoice.address_id,
+              clientAddressId: invoice.client_address_id,
+              type: invoice.type.toUpperCase(),
+              status: invoice.status.toUpperCase(),
+              number: invoice.number,
+              date: invoice.date,
+              dueDate: invoice.due_date,
+              terms: invoice.terms,
             },
           },
         },
@@ -196,63 +206,23 @@ describe("Taxes resolvers tests", () => {
       const body = result.body;
 
       assert(body.kind === "single");
-      expect((body.singleResult.data?.createTax as Tax).id).toBeTruthy();
+      expect((body.singleResult.data?.createInvoice as Invoice).id).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: CREATE_TAX_MUTATION,
+          query: CREATE_INVOICE_MUTATION,
           variables: {
             input: {
-              name: tax.name,
-              rate: tax.rate,
-              calcType: tax.calc_type.toUpperCase(),
-            },
-          },
-        },
-        {
-          contextValue: createMockContextFactory(null)(null),
-        },
-      );
-      const body = result.body;
-
-      assert(body.kind === "single");
-      expect(body.singleResult.errors).toBeTruthy();
-      expect(body.singleResult.data).toBeNull();
-    });
-  });
-
-  describe("updateTax mutation", () => {
-    it("should update a tax", async () => {
-      const result = await server.executeOperation(
-        {
-          query: UPDATE_TAX_MUTATION,
-          variables: {
-            input: {
-              id: tax.id,
-              name: tax.name + " updated",
-            },
-          },
-        },
-        {
-          contextValue: createMockContextFactory(null)(user),
-        },
-      );
-      const body = result.body;
-
-      assert(body.kind === "single");
-      expect((body.singleResult.data?.updateTax as Tax).id).toBeTruthy();
-    });
-
-    it("should return an error if user is not logged in", async () => {
-      const result = await server.executeOperation(
-        {
-          query: UPDATE_TAX_MUTATION,
-          variables: {
-            input: {
-              id: tax.id,
-              name: tax.name + " updated",
+              addressId: invoice.address_id,
+              clientAddressId: invoice.client_address_id,
+              type: invoice.type.toUpperCase(),
+              status: invoice.status.toUpperCase(),
+              number: invoice.number,
+              date: invoice.date,
+              dueDate: invoice.due_date,
+              terms: invoice.terms,
             },
           },
         },
@@ -268,13 +238,16 @@ describe("Taxes resolvers tests", () => {
     });
   });
 
-  describe("deleteTax mutation", () => {
-    it("should delete a tax", async () => {
+  describe("updateInvoice mutation", () => {
+    it("should update an invoice", async () => {
       const result = await server.executeOperation(
         {
-          query: DELETE_TAX_MUTATION,
+          query: UPDATE_INVOICE_MUTATION,
           variables: {
-            id: "1",
+            input: {
+              id: invoice.id,
+              number: invoice.number + "1",
+            },
           },
         },
         {
@@ -284,15 +257,57 @@ describe("Taxes resolvers tests", () => {
       const body = result.body;
 
       assert(body.kind === "single");
-      expect(body.singleResult.data?.deleteTax).toBeDefined();
+      expect((body.singleResult.data?.updateInvoice as Invoice).id).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: DELETE_TAX_MUTATION,
+          query: UPDATE_INVOICE_MUTATION,
           variables: {
-            id: "1",
+            input: {
+              id: invoice.id,
+              number: invoice.number + "1",
+            },
+          },
+        },
+        {
+          contextValue: createMockContextFactory(null)(null),
+        },
+      );
+      const body = result.body;
+
+      assert(body.kind === "single");
+      expect(body.singleResult.errors).toBeTruthy();
+      expect(body.singleResult.data).toBeNull();
+    });
+  });
+
+  describe("deleteInvoice mutation", () => {
+    it("should delete an invoice", async () => {
+      const result = await server.executeOperation(
+        {
+          query: DELETE_INVOICE_MUTATION,
+          variables: {
+            id: invoice.id,
+          },
+        },
+        {
+          contextValue: createMockContextFactory(null)(user),
+        },
+      );
+      const body = result.body;
+
+      assert(body.kind === "single");
+      expect(body.singleResult.data?.deleteInvoice as Invoice).toBeDefined();
+    });
+
+    it("should return an error if user is not logged in", async () => {
+      const result = await server.executeOperation(
+        {
+          query: DELETE_INVOICE_MUTATION,
+          variables: {
+            id: invoice.id,
           },
         },
         {
