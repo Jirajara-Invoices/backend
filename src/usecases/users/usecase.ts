@@ -60,8 +60,8 @@ export class UserUseCase extends BaseUseCase implements UserUseCasePort {
     }
   }
 
-  async findByID(id: string, session?: boolean): Promise<User> {
-    if (!this.isCurrentUserAdmin() && !session) {
+  async findByID(id: string, force?: boolean): Promise<User> {
+    if (!this.isCurrentUserAdmin() && !force) {
       this.logger.error(`User is not authorized to find for an user`);
       throw new ValidationError("User is not authorized to find for an users", new Map());
     }

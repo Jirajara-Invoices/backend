@@ -40,12 +40,15 @@ export type Connection<T> = {
   totalCount: number;
 };
 
-export function mapGenericFilters(args: {
+export type ConnectionArgs<T> = {
   first?: number;
   after?: string;
   last?: number;
   before?: string;
-}): Pagination {
+  filter: T;
+};
+
+export function mapGenericFilters<T>(args: ConnectionArgs<T>): Pagination {
   if (args.first && args.last) {
     throw new GraphQLError("Cannot specify both first and last", {
       extensions: {

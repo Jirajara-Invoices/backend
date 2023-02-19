@@ -8,6 +8,9 @@ import { LoggerUseCasePort } from "../usecases/common/interfaces";
 import { UserUseCase } from "../usecases/users/usecase";
 import { AddressUseCase } from "../usecases/addresses/usecase";
 import { GraphQLContext, SessionContext } from "./context";
+import { TaxesUseCasePort } from "../usecases/taxes/interfaces";
+import { InvoiceUseCasePort } from "../usecases/invoices/interfaces";
+import { InvoiceItemUseCasePort } from "../usecases/invoice_items/interfaces";
 
 export function makePool(queryResults: QueryResultRow[]) {
   return createMockPool({
@@ -25,6 +28,9 @@ type mockContextInput = {
   useCases?: {
     users?: UserUseCase;
     addresses?: AddressUseCase;
+    taxes?: TaxesUseCasePort;
+    invoices?: InvoiceUseCasePort;
+    invoiceItems?: InvoiceItemUseCasePort;
   };
   user?: User | null;
 } | null;
@@ -61,12 +67,33 @@ export function createMockContextFactory(input: mockContextInput): MockContext {
       .setup((x) => x.findByID)
       .returns(() => Promise.resolve({} as Address))
       .object();
+  const mockTaxUseCase =
+    input?.useCases?.taxes ||
+    new Mock<TaxesUseCasePort>()
+      .setup((x) => x.findByID)
+      .returns(() => Promise.resolve({} as any))
+      .object();
+  const mockInvoiceUseCase =
+    input?.useCases?.invoices ||
+    new Mock<InvoiceUseCasePort>()
+      .setup((x) => x.findByID)
+      .returns(() => Promise.resolve({} as any))
+      .object();
+  const mockInvoiceItemUseCase =
+    input?.useCases?.invoiceItems ||
+    new Mock<InvoiceItemUseCasePort>()
+      .setup((x) => x.findByID)
+      .returns(() => Promise.resolve({} as any))
+      .object();
 
   return (user): GraphQLContext => ({
     logger: logger,
     useCases: {
       users: mockUserUseCase,
       addresses: mockAddressUseCase,
+      taxes: mockTaxUseCase,
+      invoices: mockInvoiceUseCase,
+      invoiceItems: mockInvoiceItemUseCase,
     },
     req: input?.req || req,
     auth: {

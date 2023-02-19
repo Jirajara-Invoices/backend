@@ -1,24 +1,26 @@
 import { GraphQLContext } from "../../../utilities/context";
-import { generateConnection, mapGenericFilters } from "../../../utilities/relay";
+import { ConnectionArgs, generateConnection, mapGenericFilters } from "../../../utilities/relay";
 import { AddressFilterInput } from "../../../usecases/addresses/interfaces";
-import { AddressType } from "../../../entities/models/addresses";
+import { mapAddressType } from "./utils";
 
-function mapCursorArgsToFindAddressInput(args: {
-  first?: number;
-  after?: string;
-  last?: number;
-  before?: string;
-  filter: { userId?: string; name?: string; email?: string; taxId?: string; type?: string };
-}): AddressFilterInput {
+type AddressGraphQLFilterInput = {
+  userId?: string;
+  name?: string;
+  email?: string;
+  taxId?: string;
+  type?: string;
+};
+
+function mapCursorArgsToFindAddressInput(
+  args: ConnectionArgs<AddressGraphQLFilterInput>,
+): AddressFilterInput {
   const input: AddressFilterInput = mapGenericFilters(args);
 
   input.name = args.filter.name;
   input.email = args.filter.email;
   input.taxId = args.filter.taxId;
   input.userId = args.filter.userId;
-  input.type = !args.filter.type
-    ? undefined
-    : AddressType[args.filter.type.toLowerCase() as keyof typeof AddressType];
+  input.type = args.filter.type ? mapAddressType(args.filter.type) : undefined;
 
   return input;
 }
@@ -31,13 +33,7 @@ export const addressQueryResolvers = {
   },
   addresses: async (
     _: any,
-    args: {
-      first?: number;
-      after?: string;
-      last?: number;
-      before?: string;
-      filter: { userId?: string; name?: string; email?: string; taxId?: string; type?: string };
-    },
+    args: ConnectionArgs<AddressGraphQLFilterInput>,
     { useCases }: GraphQLContext,
   ) => {
     const useCase = useCases.addresses;

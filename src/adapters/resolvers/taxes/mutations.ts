@@ -1,47 +1,37 @@
 import { mapGraphQLError, ValidationError } from "../../../entities/errors";
-import { CreateAddressInput, UpdateAddressInput } from "../../../usecases/addresses/interfaces";
+import { CreateTaxInput, UpdateTaxInput } from "../../../usecases/taxes/interfaces";
 import { GraphQLContext } from "../../../utilities/context";
-import { mapAddressType } from "./utils";
+import { mapTaxCalcType } from "./utils";
 
 type GraphQLCreateInput = {
-  type: string;
   name: string;
-  tax_id?: string;
-  email?: string;
-  street?: string;
-  number?: string;
-  comment?: string;
-  zipcode?: string;
-  city?: string;
-  state?: string;
-  country: string;
+  rate: number;
+  calcType: string;
 };
 
-type GraphQLUpdateInput = {
-  id: string;
-} & Partial<GraphQLCreateInput>;
+type GraphQLUpdateInput = { id: string } & Partial<GraphQLCreateInput>;
 
-function mapGraphQLCreateInput(input: GraphQLCreateInput): CreateAddressInput {
+function mapGraphQLCreateInput(input: GraphQLCreateInput): CreateTaxInput {
   return {
     ...input,
-    type: mapAddressType(input.type),
+    calc_type: mapTaxCalcType(input.calcType),
   };
 }
 
-function mapGraphQLUpdateInput(input: GraphQLUpdateInput): UpdateAddressInput {
+function mapGraphQLUpdateInput(input: GraphQLUpdateInput): UpdateTaxInput {
   return {
     ...input,
-    type: input.type ? mapAddressType(input.type) : undefined,
+    calc_type: input.calcType ? mapTaxCalcType(input.calcType) : undefined,
   };
 }
 
-export const addressMutationResolvers = {
-  createAddress: async (
+export const taxMutationResolvers = {
+  createTax: async (
     _: any,
     { input }: { input: GraphQLCreateInput },
     { useCases }: GraphQLContext,
   ) => {
-    const useCase = useCases.addresses;
+    const useCase = useCases.taxes;
     const useCaseInput = mapGraphQLCreateInput(input);
 
     try {
@@ -54,12 +44,12 @@ export const addressMutationResolvers = {
       throw error;
     }
   },
-  updateAddress: async (
+  updateTax: async (
     _: any,
     { input }: { input: GraphQLUpdateInput },
     { useCases }: GraphQLContext,
   ) => {
-    const useCase = useCases.addresses;
+    const useCase = useCases.taxes;
     const useCaseInput = mapGraphQLUpdateInput(input);
 
     try {
@@ -72,8 +62,8 @@ export const addressMutationResolvers = {
       throw error;
     }
   },
-  deleteAddress: async (_: any, { id }: { id: string }, { useCases }: GraphQLContext) => {
-    const useCase = useCases.addresses;
+  deleteTax: async (_: any, { id }: { id: string }, { useCases }: GraphQLContext) => {
+    const useCase = useCases.taxes;
 
     try {
       await useCase.delete(id);

@@ -1,28 +1,28 @@
-import assert from "assert";
 import { readFileSync } from "fs";
 import { ApolloServer } from "@apollo/server";
 import { addMocksToSchema } from "@graphql-tools/mock";
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { User, UserRole } from "../../../entities/models/users";
-import { Address, AddressType } from "../../../entities/models/addresses";
 import { GraphQLContext } from "../../../utilities/context";
 import { createAuthDirective } from "../../../utilities/auth";
-import { createMockContextFactory } from "../../../utilities/mock";
 import { resolvers } from "../index";
+import { Tax, TaxCalcType } from "../../../entities/models/taxes";
+import { createMockContextFactory } from "../../../utilities/mock";
+import assert from "assert";
 
 const typeDefs = readFileSync("./schema.graphql", "utf8");
 
-const ADDRESS_QUERY = `
-  query address($id: ID!) {
-    address(id: $id) {
+const TAX_QUERY = `
+  query tax($id: ID!) {
+    tax(id: $id) {
       id
     }
   }
 `;
 
-const ADDRESSES_QUERY = `
-  query addresses($first: Int, $after: String, $last: Int, $before: String, $filter: FindAddressInput!) {
-    addresses(first: $first, after: $after, last: $last, before: $before, filter: $filter) {
+const TAXES_QUERY = `
+  query taxes($first: Int, $after: String, $last: Int, $before: String, $filter: FindTaxInput!) {
+    taxes(first: $first, after: $after, last: $last, before: $before, filter: $filter) {
       edges {
         node {
           id
@@ -32,34 +32,34 @@ const ADDRESSES_QUERY = `
   }
 `;
 
-const CREATE_ADDRESS_MUTATION = `
-  mutation createAddress($input: CreateAddressInput!) {
-    createAddress(input: $input) {
+const CREATE_TAX_MUTATION = `
+  mutation createTax($input: CreateTaxInput!) {
+    createTax(input: $input) {
       id
     }
   }
 `;
 
-const UPDATE_ADDRESS_MUTATION = `
-  mutation updateAddress($input: UpdateAddressInput!) {
-    updateAddress(input: $input) {
+const UPDATE_TAX_MUTATION = `
+  mutation updateTax($input: UpdateTaxInput!) {
+    updateTax(input: $input) {
       id
     }
   }
 `;
 
-const DELETE_ADDRESS_MUTATION = `
-  mutation deleteAddress($id: ID!) {
-    deleteAddress(id: $id)
+const DELETE_TAX_MUTATION = `
+  mutation deleteTax($id: ID!) {
+    deleteTax(id: $id)
   }
 `;
 
-describe("Addresses resolvers tests", () => {
+describe("Taxes resolvers tests", () => {
   let server: ApolloServer<GraphQLContext>;
   let user: User;
-  let address: Address;
+  let tax: Tax;
 
-  beforeAll(async () => {
+  beforeAll(() => {
     server = new ApolloServer<GraphQLContext>({
       schema: createAuthDirective(
         addMocksToSchema({
@@ -79,34 +79,24 @@ describe("Addresses resolvers tests", () => {
       updated_at: new Date(),
     };
 
-    address = {
+    tax = {
       id: "1",
+      name: "IVA",
+      rate: 12,
+      calc_type: TaxCalcType.Percentage,
       user_id: user.id,
-      user: user,
-      type: AddressType.Personal,
-      name: "name",
-      tax_id: "taxId",
-      email: "email@example.com",
-      number: "number",
-      comment: "comment",
-      street: "street",
-      zipcode: "zipcode",
-      city: "city",
-      state: "state",
-      country: "VE",
       created_at: new Date(),
       updated_at: new Date(),
-      deleted_at: undefined,
     };
   });
 
-  describe("address", () => {
-    it("should return an address", async () => {
+  describe("tax query", () => {
+    it("should return a tax", async () => {
       const result = await server.executeOperation(
         {
-          query: ADDRESS_QUERY,
+          query: TAX_QUERY,
           variables: {
-            id: "1",
+            id: tax.id,
           },
         },
         {
@@ -116,15 +106,15 @@ describe("Addresses resolvers tests", () => {
       const body = result.body;
 
       assert(body.kind === "single");
-      expect((body.singleResult.data?.address as Address).id).toBeTruthy();
+      expect((body.singleResult.data?.tax as Tax).id).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: ADDRESS_QUERY,
+          query: TAX_QUERY,
           variables: {
-            id: "1",
+            id: tax.id,
           },
         },
         {
@@ -139,18 +129,15 @@ describe("Addresses resolvers tests", () => {
     });
   });
 
-  describe("addresses", () => {
-    it("should return a list of addresses", async () => {
+  describe("taxes query", () => {
+    it("should return a list of taxes", async () => {
       const result = await server.executeOperation(
         {
-          query: ADDRESSES_QUERY,
+          query: TAXES_QUERY,
           variables: {
-            first: 10,
-            after: null,
-            last: null,
-            before: null,
+            first: 1,
             filter: {
-              userId: user.id,
+              name: "IVA",
             },
           },
         },
@@ -162,21 +149,18 @@ describe("Addresses resolvers tests", () => {
 
       assert(body.kind === "single");
       expect(
-        (body.singleResult.data?.addresses as { edges: { node: Address }[] }).edges[0].node.id,
+        (body.singleResult.data?.taxes as { edges: { node: Tax }[] }).edges[0].node.id,
       ).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: ADDRESSES_QUERY,
+          query: TAXES_QUERY,
           variables: {
-            first: 10,
-            after: null,
-            last: null,
-            before: null,
+            first: 1,
             filter: {
-              userId: user.id,
+              name: "IVA",
             },
           },
         },
@@ -188,55 +172,49 @@ describe("Addresses resolvers tests", () => {
 
       assert(body.kind === "single");
       expect(body.singleResult.errors).toBeTruthy();
-      expect(body.singleResult.data?.addresses).toBeNull();
+      expect(body.singleResult.data?.taxes).toBeNull();
     });
   });
 
-  describe("createAddress", () => {
-    it("should create an address", async () => {
-      const input = {
-        type: address.type.toUpperCase(),
-        name: address.name,
-        tax_id: address.tax_id,
-        country: address.country,
-      };
+  describe("createTax mutation", () => {
+    it("should create a tax", async () => {
       const result = await server.executeOperation(
         {
-          query: CREATE_ADDRESS_MUTATION,
+          query: CREATE_TAX_MUTATION,
           variables: {
-            input,
+            input: {
+              name: tax.name,
+              rate: tax.rate,
+              calcType: tax.calc_type.toUpperCase(),
+            },
           },
         },
         {
           contextValue: createMockContextFactory(null)(user),
         },
       );
-
       const body = result.body;
 
       assert(body.kind === "single");
-      expect((body.singleResult.data?.createAddress as Address).id).toBeTruthy();
+      expect((body.singleResult.data?.createTax as Tax).id).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
-      const input = {
-        type: address.type.toUpperCase(),
-        name: address.name,
-        tax_id: address.tax_id,
-        country: address.country,
-      };
       const result = await server.executeOperation(
         {
-          query: CREATE_ADDRESS_MUTATION,
+          query: CREATE_TAX_MUTATION,
           variables: {
-            input,
+            input: {
+              name: tax.name,
+              rate: tax.rate,
+              calcType: tax.calc_type.toUpperCase(),
+            },
           },
         },
         {
           contextValue: createMockContextFactory(null)(null),
         },
       );
-
       const body = result.body;
 
       assert(body.kind === "single");
@@ -245,47 +223,43 @@ describe("Addresses resolvers tests", () => {
     });
   });
 
-  describe("updateAddress", () => {
-    it("should update an address", async () => {
-      const input = {
-        id: address.id,
-        name: address.name,
-      };
+  describe("updateTax mutation", () => {
+    it("should update a tax", async () => {
       const result = await server.executeOperation(
         {
-          query: UPDATE_ADDRESS_MUTATION,
+          query: UPDATE_TAX_MUTATION,
           variables: {
-            input,
+            input: {
+              id: tax.id,
+              name: tax.name + " updated",
+            },
           },
         },
         {
           contextValue: createMockContextFactory(null)(user),
         },
       );
-
       const body = result.body;
 
       assert(body.kind === "single");
-      expect((body.singleResult.data?.updateAddress as Address).id).toBeTruthy();
+      expect((body.singleResult.data?.updateTax as Tax).id).toBeTruthy();
     });
 
     it("should return an error if user is not logged in", async () => {
-      const input = {
-        id: address.id,
-        name: address.name,
-      };
       const result = await server.executeOperation(
         {
-          query: UPDATE_ADDRESS_MUTATION,
+          query: UPDATE_TAX_MUTATION,
           variables: {
-            input,
+            input: {
+              id: tax.id,
+              name: tax.name + " updated",
+            },
           },
         },
         {
           contextValue: createMockContextFactory(null)(null),
         },
       );
-
       const body = result.body;
 
       assert(body.kind === "single");
@@ -294,39 +268,37 @@ describe("Addresses resolvers tests", () => {
     });
   });
 
-  describe("deleteAddress", () => {
-    it("should delete an address", async () => {
+  describe("deleteTax mutation", () => {
+    it("should delete a tax", async () => {
       const result = await server.executeOperation(
         {
-          query: DELETE_ADDRESS_MUTATION,
+          query: DELETE_TAX_MUTATION,
           variables: {
-            id: address.id,
+            id: "1",
           },
         },
         {
           contextValue: createMockContextFactory(null)(user),
         },
       );
-
       const body = result.body;
 
       assert(body.kind === "single");
-      expect(body.singleResult.data?.deleteAddress).toBeDefined();
+      expect(body.singleResult.data?.deleteTax).toBeDefined();
     });
 
     it("should return an error if user is not logged in", async () => {
       const result = await server.executeOperation(
         {
-          query: DELETE_ADDRESS_MUTATION,
+          query: DELETE_TAX_MUTATION,
           variables: {
-            id: address.id,
+            id: "1",
           },
         },
         {
           contextValue: createMockContextFactory(null)(null),
         },
       );
-
       const body = result.body;
 
       assert(body.kind === "single");

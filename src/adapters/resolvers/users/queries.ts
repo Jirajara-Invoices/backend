@@ -1,15 +1,14 @@
 import { FindUserInput } from "../../../usecases/users/interfaces";
 import { GraphQLContext } from "../../../utilities/context";
-import { generateConnection, mapGenericFilters } from "../../../utilities/relay";
+import { ConnectionArgs, generateConnection, mapGenericFilters } from "../../../utilities/relay";
 import { GraphQLError } from "graphql/error";
 
-function mapCursorArgsToFindUserInput(args: {
-  first?: number;
-  after?: string;
-  last?: number;
-  before?: string;
-  filter: { name?: string; email?: string };
-}): FindUserInput {
+type UserGraphQLFilterInput = {
+  name?: string;
+  email?: string;
+};
+
+function mapCursorArgsToFindUserInput(args: ConnectionArgs<UserGraphQLFilterInput>): FindUserInput {
   const input: FindUserInput = mapGenericFilters(args);
 
   input.name = args.filter.name;
@@ -26,13 +25,7 @@ export const userQueryResolvers = {
   },
   users: async (
     _: any,
-    args: {
-      first?: number;
-      after?: string;
-      last?: number;
-      before?: string;
-      filter: { name?: string; email?: string };
-    },
+    args: ConnectionArgs<UserGraphQLFilterInput>,
     { useCases }: GraphQLContext,
   ) => {
     const useCase = useCases.users;
