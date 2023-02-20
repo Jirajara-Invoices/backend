@@ -1,3 +1,4 @@
+import { createId } from "@paralleldrive/cuid2";
 import { DatabasePool, sql } from "slonik";
 import { z } from "zod";
 import { InvoiceItem, InvoiceItemType } from "../../../entities/models/invoice_items";
@@ -7,7 +8,6 @@ import {
   ItemsFilterInput,
   UpdateItemInput,
 } from "../../../usecases/invoice_items/interfaces";
-import { createId } from "@paralleldrive/cuid2";
 
 const invoiceItemZodSchema = z.object({
   id: z.string(),
@@ -62,7 +62,7 @@ export class InvoiceItemRepository implements InvoiceItemRepositoryPort {
         SELECT ii.*
         FROM invoice_items ii
         INNER JOIN invoices iv ON iv.id = ii.invoice_id
-        WHERE id = ${id}${userId ? sql.fragment` AND user_id = ${userId}` : sql.fragment``}
+        WHERE ii.id = ${id}${userId ? sql.fragment` AND user_id = ${userId}` : sql.fragment``}
       `,
     );
 

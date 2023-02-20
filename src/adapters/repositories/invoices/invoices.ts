@@ -1,4 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
+import DataLoader from "dataloader";
 import { DatabasePool, sql } from "slonik";
 import { z } from "zod";
 import {
@@ -127,14 +128,14 @@ const mapInvoice = (invoice: InvoiceZodSchema): Invoice => ({
 });
 
 export class InvoiceRepository implements InvoiceRepositoryPort {
-  constructor(private dbPool: DatabasePool) {}
+  private invoiceLoader: DataLoader<string, Invoice>;
+  private simpleCache: Map<string, readonly InvoiceItemAndTax[]> = new Map();
+  constructor(private dbPool: DatabasePool) {
+    this.invoiceLoader = new DataLoader(this.batchLoadInvoices);
+  }
 
   async findByID(id: string): Promise<Invoice> {
-    const invoice: InvoiceZodSchema = await this.dbPool.one(
-      sql.type(invoiceZodSchema)`SELECT * FROM invoices WHERE id = ${id}`,
-    );
-
-    return mapInvoice(invoice);
+    return this.invoiceLoader.load(id);
   }
 
   async findAll(filter: InvoiceFilterInput): Promise<Invoice[]> {
@@ -358,13 +359,37 @@ export class InvoiceRepository implements InvoiceRepositoryPort {
     }));
   }
 
+  private batchLoadInvoices = async (ids: readonly string[]): Promise<(Invoice | Error)[]> => {
+    const invoices = await this.dbPool.any(
+      sql.type(invoiceZodSchema)`SELECT * FROM invoices WHERE id = ANY(${sql.array(
+        ids,
+        "varchar",
+      )})`,
+    );
+
+    const invoicesMapped: (Invoice | Error)[] = [];
+    for (const id of ids) {
+      const invoice = invoices.find((invoice) => invoice.id === id);
+      if (invoice) {
+        invoicesMapped.push(mapInvoice(invoice));
+      } else {
+        invoicesMapped.push(new Error(`Invoice with id ${id} not found`));
+      }
+    }
+
+    return invoicesMapped;
+  };
+
   private async getInvoiceItemsAndTaxes(
     invoiceId: string,
     filters?: {
       itemType: InvoiceItemType;
     },
   ): Promise<readonly InvoiceItemAndTax[]> {
-    const result = await this.dbPool.query(
+    const cached = this.simpleCache.get(`${invoiceId}-${filters?.itemType}`);
+    if (cached) return cached;
+
+    const result = await this.dbPool.any(
       sql.type(invoiceItemAndTaxSchema)`
         SELECT
           ii.id,
@@ -391,7 +416,8 @@ export class InvoiceRepository implements InvoiceRepositoryPort {
       }
       `,
     );
+    this.simpleCache.set(`${invoiceId}-${filters?.itemType}`, result);
 
-    return result.rows;
+    return result;
   }
 }

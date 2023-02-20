@@ -1,4 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
+import DataLoader from "dataloader";
 import { DatabasePool, sql } from "slonik";
 import { z } from "zod";
 import {
@@ -38,14 +39,33 @@ const mapTax = (tax: TaxZodSchema): Tax => {
 };
 
 export class TaxRepository implements TaxesRepositoryPort {
-  constructor(private dbPool: DatabasePool) {}
+  private taxLoader: DataLoader<string, Tax>;
+
+  constructor(private dbPool: DatabasePool) {
+    this.taxLoader = new DataLoader(async (ids: readonly string[]) => {
+      const taxes = await this.dbPool.any(
+        sql.type(taxZodSchema)`SELECT * FROM taxes WHERE id IN (${sql.join(
+          ids,
+          sql.fragment`, `,
+        )})`,
+      );
+
+      const taxesMapped: (Tax | Error)[] = [];
+      for (const id of ids) {
+        const tax = taxes.find((tax) => tax.id === id);
+        if (tax) {
+          taxesMapped.push(mapTax(tax));
+        } else {
+          taxesMapped.push(new Error(`Tax with id ${id} not found`));
+        }
+      }
+
+      return taxesMapped;
+    });
+  }
 
   async findByID(id: string): Promise<Tax> {
-    const result: TaxZodSchema = await this.dbPool.one(
-      sql.type(taxZodSchema)`SELECT * FROM taxes WHERE id = ${id}`,
-    );
-
-    return mapTax(result);
+    return this.taxLoader.load(id);
   }
 
   async findAll(filter: TaxesFilterInput): Promise<Tax[]> {

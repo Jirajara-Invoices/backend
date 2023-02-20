@@ -1,4 +1,5 @@
 import * as argon2 from "argon2";
+import DataLoader from "dataloader";
 import { createId } from "@paralleldrive/cuid2";
 import { DatabasePool, sql, UniqueIntegrityConstraintViolationError } from "slonik";
 
@@ -31,15 +32,31 @@ function mapUser(user: Record<string, string>): User {
 
 export class UserRepository implements UserRepositoryPort {
   private dbPool: DatabasePool;
+  private userLoader: DataLoader<string, User>;
 
   constructor(dbPool: DatabasePool) {
     this.dbPool = dbPool;
+    this.userLoader = new DataLoader(async (ids: readonly string[]) => {
+      const users = await this.dbPool.any(
+        sql.unsafe`SELECT * FROM users WHERE id IN (${sql.join(ids, sql.fragment`, `)})`,
+      );
+
+      const usersMapped: (User | Error)[] = [];
+      for (const id of ids) {
+        const user = users.find((user) => user.id === id);
+        if (user) {
+          usersMapped.push(mapUser(user));
+        } else {
+          usersMapped.push(new Error(`User with id ${id} not found`));
+        }
+      }
+
+      return usersMapped;
+    });
   }
 
   async findByID(id: string): Promise<User> {
-    const user = await this.dbPool.one(sql.unsafe`SELECT * FROM users WHERE id = ${id}`);
-
-    return mapUser(user);
+    return await this.userLoader.load(id);
   }
 
   async find(input: FindUserInput): Promise<User[]> {

@@ -1,4 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
+import DataLoader from "dataloader";
 import { DatabasePool, sql } from "slonik";
 import { z } from "zod";
 
@@ -55,14 +56,32 @@ function mapAddress(address: AddressZodSchema): Address {
 }
 
 export class AddressRepository implements AddressRepositoryPort {
-  constructor(private dbPool: DatabasePool) {}
+  private addressLoader: DataLoader<string, Address>;
+  constructor(private dbPool: DatabasePool) {
+    this.addressLoader = new DataLoader(async (ids: readonly string[]) => {
+      const addresses = await this.dbPool.any(
+        sql.type(addressZodSchema)`SELECT * FROM addresses WHERE id IN (${sql.join(
+          ids,
+          sql.fragment`, `,
+        )})`,
+      );
+
+      const addressesMapped: (Address | Error)[] = [];
+      for (const id of ids) {
+        const address = addresses.find((address) => address.id === id);
+        if (address) {
+          addressesMapped.push(mapAddress(address));
+        } else {
+          addressesMapped.push(new Error(`Address with id ${id} not found`));
+        }
+      }
+
+      return addressesMapped;
+    });
+  }
 
   async findByID(id: string): Promise<Address> {
-    const user: AddressZodSchema = await this.dbPool.one(
-      sql.type(addressZodSchema)`SELECT * FROM addresses WHERE id = ${id}`,
-    );
-
-    return mapAddress(user);
+    return await this.addressLoader.load(id);
   }
 
   async find(filter: AddressFilterInput) {
