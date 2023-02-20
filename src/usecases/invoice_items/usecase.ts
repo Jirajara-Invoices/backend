@@ -29,7 +29,7 @@ export class InvoiceItemUseCase extends BaseUseCase implements InvoiceItemUseCas
       this.logger.error(`Invalid input for invoice item creation: ${mapToString(errors)}`);
       throw new ValidationError("Invalid input for invoice item creation", errors);
     }
-    return await this.repository.create(input, this.getCurrentUserId());
+    return await this.repository.create(input);
   }
 
   async update(input: UpdateItemInput): Promise<InvoiceItem> {
