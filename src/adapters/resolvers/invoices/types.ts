@@ -24,6 +24,46 @@ export const invoiceTypeResolvers = {
 
     return await useCase.findByID(invoice.address_id);
   },
+  items: async (invoice: Invoice, _: unknown, { useCases }: GraphQLContext) => {
+    const useCase = useCases.invoices;
+
+    return await useCase.getInvoiceItems(invoice.id);
+  },
+  taxes: async (invoice: Invoice, _: unknown, { useCases }: GraphQLContext) => {
+    const useCase = useCases.invoices;
+
+    return await useCase.getInvoiceTaxes(invoice.id);
+  },
+  taxAmount: async (invoice: Invoice, _: unknown, { useCases }: GraphQLContext) => {
+    const useCase = useCases.invoices;
+
+    return await useCase.getTaxAmount(invoice.id);
+  },
+  discount: async (invoice: Invoice, _: unknown, { useCases }: GraphQLContext) => {
+    const useCase = useCases.invoices;
+
+    return await useCase.getDiscount(invoice.id);
+  },
+  subTotal: async (invoice: Invoice, _: unknown, { useCases }: GraphQLContext) => {
+    const useCase = useCases.invoices;
+
+    return await useCase.getSubtotal(invoice.id);
+  },
+  taxableAmount: async (invoice: Invoice, _: unknown, { useCases }: GraphQLContext) => {
+    const useCase = useCases.invoices;
+
+    return await useCase.getTaxableAmount(invoice.id);
+  },
+  nonTaxableAmount: async (invoice: Invoice, _: unknown, { useCases }: GraphQLContext) => {
+    const useCase = useCases.invoices;
+
+    return await useCase.getNonTaxableAmount(invoice.id);
+  },
+  total: async (invoice: Invoice, _: unknown, { useCases }: GraphQLContext) => {
+    const useCase = useCases.invoices;
+
+    return await useCase.getTotal(invoice.id);
+  },
   createdAt: (invoice: Invoice) => invoice.created_at,
   updatedAt: (invoice: Invoice) => invoice.updated_at,
   deletedAt: (invoice: Invoice) => invoice.deleted_at,

@@ -8,6 +8,8 @@ import {
   UpdateInvoiceInput,
 } from "../../../usecases/invoices/interfaces";
 import { Invoice, InvoiceStatus, InvoiceType } from "../../../entities/models/invoice";
+import { Tax, TaxCalcType } from "../../../entities/models/taxes";
+import { InvoiceItem, InvoiceItemType } from "../../../entities/models/invoice_items";
 
 const invoiceZodSchema = z.object({
   id: z.string(),
@@ -65,6 +67,48 @@ const invoiceZodSchema = z.object({
   deleted_at: z.coerce.date().nullish(),
 });
 type InvoiceZodSchema = z.infer<typeof invoiceZodSchema>;
+
+const invoiceItemAndTaxSchema = z.object({
+  id: z.string(),
+  invoice_id: z.string(),
+  type: z.enum<
+    InvoiceItemType,
+    [
+      InvoiceItemType.Service,
+      InvoiceItemType.Product,
+      InvoiceItemType.Shipping,
+      InvoiceItemType.Discount,
+      InvoiceItemType.Tax,
+    ]
+  >([
+    InvoiceItemType.Service,
+    InvoiceItemType.Product,
+    InvoiceItemType.Shipping,
+    InvoiceItemType.Discount,
+    InvoiceItemType.Tax,
+  ]),
+  name: z.string(),
+  description: z.string(),
+  quantity: z.number(),
+  price: z.number(),
+  tax_id: z.ostring(),
+  item_created_at: z.coerce.date(),
+  item_updated_at: z.coerce.date(),
+  item_deleted_at: z.coerce.date().optional(),
+  tax_user_id: z.ostring(),
+  tax_calc_type: z
+    .enum<TaxCalcType, [TaxCalcType.Percentage, TaxCalcType.Fixed]>([
+      TaxCalcType.Percentage,
+      TaxCalcType.Fixed,
+    ])
+    .optional(),
+  tax_name: z.ostring(),
+  tax_rate: z.onumber(),
+  tax_created_at: z.coerce.date().optional(),
+  tax_updated_at: z.coerce.date().optional(),
+  tax_deleted_at: z.coerce.date().optional(),
+});
+type InvoiceItemAndTax = z.infer<typeof invoiceItemAndTaxSchema>;
 
 const mapInvoice = (invoice: InvoiceZodSchema): Invoice => ({
   id: invoice.id,
@@ -194,5 +238,161 @@ export class InvoiceRepository implements InvoiceRepositoryPort {
         WHERE id = ${id}
       `,
     );
+  }
+
+  async getDiscount(invoiceId: string): Promise<number> {
+    const discounts = await this.getInvoiceItemsAndTaxes(invoiceId, {
+      itemType: InvoiceItemType.Discount,
+    });
+
+    return discounts.reduce((acc, item) => acc + item.price, 0);
+  }
+
+  async getInvoiceTaxes(invoiceId: string): Promise<Tax[]> {
+    const taxes = await this.getInvoiceItemsAndTaxes(invoiceId);
+    const invoiceTaxes = taxes.filter((tax) => tax.tax_id !== undefined);
+
+    return invoiceTaxes.map((tax) => ({
+      id: tax.tax_id!,
+      user_id: tax.tax_user_id!,
+      name: tax.tax_name!,
+      rate: tax.tax_rate!,
+      calc_type: tax.tax_calc_type!,
+      created_at: new Date(tax.tax_created_at!),
+      updated_at: new Date(tax.tax_updated_at!),
+      deleted_at: tax.tax_deleted_at ? new Date(tax.tax_deleted_at) : undefined,
+    }));
+  }
+
+  async getNonTaxableAmount(invoiceId: string): Promise<number> {
+    const items = await this.getInvoiceItemsAndTaxes(invoiceId);
+
+    return items.reduce((acc, item) => {
+      if (!item.tax_rate || item.tax_rate === 0) {
+        return acc + item.price;
+      }
+
+      return acc;
+    }, 0);
+  }
+
+  async getSubtotal(invoiceId: string): Promise<number> {
+    const items = await this.getInvoiceItemsAndTaxes(invoiceId);
+
+    return items.reduce((acc, item) => {
+      if (item.type === InvoiceItemType.Discount) {
+        return acc - item.price;
+      }
+
+      return acc + item.price * item.quantity;
+    }, 0);
+  }
+
+  async getTaxAmount(invoiceId: string): Promise<number> {
+    const taxes = await this.getInvoiceItemsAndTaxes(invoiceId);
+
+    return taxes.reduce((acc, item) => {
+      if (item.tax_rate) {
+        const taxRate = item.tax_rate;
+        if (item.tax_calc_type === TaxCalcType.Percentage) {
+          return acc + item.price * item.quantity * (taxRate / 100);
+        } else if (item.tax_calc_type === TaxCalcType.Fixed) {
+          return acc + taxRate;
+        }
+      } else if (item.type === InvoiceItemType.Tax) {
+        return acc + item.price;
+      }
+
+      return acc;
+    }, 0);
+  }
+
+  async getTaxableAmount(invoiceId: string): Promise<number> {
+    const taxes = await this.getInvoiceItemsAndTaxes(invoiceId);
+
+    return taxes.reduce((acc, item) => {
+      if (item.tax_rate) {
+        return acc + item.price * item.quantity;
+      }
+
+      return acc;
+    }, 0);
+  }
+
+  async getTotal(invoiceId: string): Promise<number> {
+    const items = await this.getInvoiceItemsAndTaxes(invoiceId);
+
+    return items.reduce((acc, item) => {
+      if (item.type === InvoiceItemType.Discount) {
+        return acc - item.price;
+      }
+      let taxAmount = 0;
+      if (item.tax_rate) {
+        const taxRate = item.tax_rate;
+        if (item.tax_calc_type === TaxCalcType.Percentage) {
+          taxAmount += item.price * item.quantity * (taxRate / 100);
+        } else if (item.tax_calc_type === TaxCalcType.Fixed) {
+          taxAmount += taxRate;
+        }
+      }
+
+      return acc + item.price * item.quantity + taxAmount;
+    }, 0);
+  }
+
+  async getInvoiceItems(invoiceId: string): Promise<InvoiceItem[]> {
+    const items = await this.getInvoiceItemsAndTaxes(invoiceId);
+
+    return items.map((item) => ({
+      id: item.id,
+      invoice_id: item.invoice_id,
+      type: item.type,
+      name: item.name,
+      description: item.description,
+      quantity: item.quantity,
+      price: item.price,
+      tax_id: item.tax_id,
+      created_at: new Date(item.item_created_at),
+      updated_at: new Date(item.item_updated_at),
+      deleted_at: item.item_deleted_at ? new Date(item.item_deleted_at) : undefined,
+    }));
+  }
+
+  private async getInvoiceItemsAndTaxes(
+    invoiceId: string,
+    filters?: {
+      itemType: InvoiceItemType;
+    },
+  ): Promise<readonly InvoiceItemAndTax[]> {
+    const result = await this.dbPool.query(
+      sql.type(invoiceItemAndTaxSchema)`
+        SELECT (
+          ii.id,
+          ii.invoice_id,
+          ii.name,
+          ii.description,
+          ii.quantity,
+          ii.price,
+          ii.tax_id,
+          ii.created_at AS item_created_at,
+          ii.updated_at AS item_updated_at,
+          ii.deleted_at AS item_deleted_at,
+          t.user_id AS tax_user_id,
+          t.name AS tax_name,
+          t.rate AS tax_rate,
+          t.type AS tax_type,
+          t.created_at AS tax_created_at,
+          t.updated_at AS tax_updated_at
+          t.deleted_at AS tax_deleted_at
+        ) 
+        FROM invoice_items ii
+        LEFT JOIN taxes t ON t.id = ii.tax_id
+        WHERE ii.invoice_id = ${invoiceId}${
+        filters?.itemType ? sql.fragment` AND ii.type = ${filters.itemType}` : sql.fragment``
+      }
+      `,
+    );
+
+    return result.rows;
   }
 }

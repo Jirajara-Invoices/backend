@@ -13,6 +13,8 @@ import {
 } from "./interfaces";
 import { validateCreateInvoiceInput, validateUpdateInvoiceInput } from "./validators";
 import { mapToString } from "../../utilities/arrays";
+import { Tax } from "../../entities/models/taxes";
+import { InvoiceItem } from "../../entities/models/invoice_items";
 
 export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   constructor(
@@ -59,8 +61,8 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async findByID(id: string): Promise<Invoice> {
     const invoice = await this.repository.findByID(id);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to update this invoice`);
-      throw new ValidationError("User is not authorized to update this invoice", new Map());
+      this.logger.error(`User is not authorized to see this invoice`);
+      throw new ValidationError("User is not authorized to see this invoice", new Map());
     }
 
     return invoice;
@@ -80,5 +82,85 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
     }
 
     return await this.repository.findAll(filter);
+  }
+
+  async getDiscount(invoiceId: string): Promise<number> {
+    const invoice = await this.repository.findByID(invoiceId);
+    if (!this.isCurrentUserAuthorized(invoice.user_id)) {
+      this.logger.error(`User is not authorized to see this invoice`);
+      throw new ValidationError("User is not authorized to see this invoice", new Map());
+    }
+
+    return this.repository.getDiscount(invoiceId);
+  }
+
+  async getInvoiceTaxes(invoiceId: string): Promise<Tax[]> {
+    const invoice = await this.repository.findByID(invoiceId);
+    if (!this.isCurrentUserAuthorized(invoice.user_id)) {
+      this.logger.error(`User is not authorized to see this invoice`);
+      throw new ValidationError("User is not authorized to see this invoice", new Map());
+    }
+
+    return this.repository.getInvoiceTaxes(invoiceId);
+  }
+
+  async getNonTaxableAmount(invoiceId: string): Promise<number> {
+    const invoice = await this.repository.findByID(invoiceId);
+    if (!this.isCurrentUserAuthorized(invoice.user_id)) {
+      this.logger.error(`User is not authorized to see this invoice`);
+      throw new ValidationError("User is not authorized to see this invoice", new Map());
+    }
+
+    return this.repository.getNonTaxableAmount(invoiceId);
+  }
+
+  async getSubtotal(invoiceId: string): Promise<number> {
+    const invoice = await this.repository.findByID(invoiceId);
+    if (!this.isCurrentUserAuthorized(invoice.user_id)) {
+      this.logger.error(`User is not authorized to see this invoice`);
+      throw new ValidationError("User is not authorized to see this invoice", new Map());
+    }
+
+    return this.repository.getSubtotal(invoiceId);
+  }
+
+  async getTaxAmount(invoiceId: string): Promise<number> {
+    const invoice = await this.repository.findByID(invoiceId);
+    if (!this.isCurrentUserAuthorized(invoice.user_id)) {
+      this.logger.error(`User is not authorized to see this invoice`);
+      throw new ValidationError("User is not authorized to see this invoice", new Map());
+    }
+
+    return this.repository.getTaxAmount(invoiceId);
+  }
+
+  async getTaxableAmount(invoiceId: string): Promise<number> {
+    const invoice = await this.repository.findByID(invoiceId);
+    if (!this.isCurrentUserAuthorized(invoice.user_id)) {
+      this.logger.error(`User is not authorized to see this invoice`);
+      throw new ValidationError("User is not authorized to see this invoice", new Map());
+    }
+
+    return this.repository.getTaxableAmount(invoiceId);
+  }
+
+  async getTotal(invoiceId: string): Promise<number> {
+    const invoice = await this.repository.findByID(invoiceId);
+    if (!this.isCurrentUserAuthorized(invoice.user_id)) {
+      this.logger.error(`User is not authorized to see this invoice`);
+      throw new ValidationError("User is not authorized to see this invoice", new Map());
+    }
+
+    return this.repository.getTotal(invoiceId);
+  }
+
+  async getInvoiceItems(invoiceId: string): Promise<InvoiceItem[]> {
+    const invoice = await this.repository.findByID(invoiceId);
+    if (!this.isCurrentUserAuthorized(invoice.user_id)) {
+      this.logger.error(`User is not authorized to see this invoice`);
+      throw new ValidationError("User is not authorized to see this invoice", new Map());
+    }
+
+    return this.repository.getInvoiceItems(invoiceId);
   }
 }

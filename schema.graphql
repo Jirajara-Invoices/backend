@@ -225,6 +225,8 @@ type Invoice implements Node {
     taxAmount: Float!
     discount: Float!
     subTotal: Float!
+    taxableAmount: Float!
+    nonTaxableAmount: Float!
     total: Float!
     terms: String!
     items: [InvoiceItem!]!

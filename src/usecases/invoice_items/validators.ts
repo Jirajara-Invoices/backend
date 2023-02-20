@@ -19,6 +19,13 @@ export function validateCreateItemInput(input: CreateItemInput): Map<string, str
     errors.set("quantity", "A quantity is required and must be greater than 0");
   }
 
+  if (
+    (input.type === InvoiceItemType.Tax || input.type === InvoiceItemType.Discount) &&
+    input.quantity !== 1
+  ) {
+    errors.set("quantity", "Tax or discount items must have a quantity of 1");
+  }
+
   return errors;
 }
 

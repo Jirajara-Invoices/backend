@@ -1,6 +1,8 @@
 import { Pagination } from "../../entities/types/pagination";
 import { Invoice, InvoiceStatus, InvoiceType } from "../../entities/models/invoice";
 import { BaseUseCase } from "../common/base";
+import { Tax } from "../../entities/models/taxes";
+import { InvoiceItem } from "../../entities/models/invoice_items";
 
 export interface CreateInvoiceInput {
   address_id: string;
@@ -34,6 +36,14 @@ export interface InvoiceUseCasePort extends BaseUseCase {
   delete(id: string): Promise<void>;
   findByID(id: string): Promise<Invoice>;
   findAll(filter: InvoiceFilterInput): Promise<Invoice[]>;
+  getInvoiceItems(invoiceId: string): Promise<InvoiceItem[]>;
+  getInvoiceTaxes(invoiceId: string): Promise<Tax[]>;
+  getTaxAmount(invoiceId: string): Promise<number>;
+  getTaxableAmount(invoiceId: string): Promise<number>;
+  getNonTaxableAmount(invoiceId: string): Promise<number>;
+  getSubtotal(invoiceId: string): Promise<number>;
+  getDiscount(invoiceId: string): Promise<number>;
+  getTotal(invoiceId: string): Promise<number>;
 }
 
 export interface InvoiceRepositoryPort {
@@ -42,4 +52,12 @@ export interface InvoiceRepositoryPort {
   delete(id: string): Promise<void>;
   findByID(id: string): Promise<Invoice>;
   findAll(filter: InvoiceFilterInput): Promise<Invoice[]>;
+  getInvoiceItems(invoiceId: string): Promise<InvoiceItem[]>;
+  getInvoiceTaxes(invoiceId: string): Promise<Tax[]>;
+  getTaxAmount(invoiceId: string): Promise<number>;
+  getTaxableAmount(invoiceId: string): Promise<number>;
+  getNonTaxableAmount(invoiceId: string): Promise<number>;
+  getSubtotal(invoiceId: string): Promise<number>;
+  getDiscount(invoiceId: string): Promise<number>;
+  getTotal(invoiceId: string): Promise<number>;
 }

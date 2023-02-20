@@ -4,6 +4,8 @@ import { makePool } from "../../../utilities/mock";
 import { Invoice, InvoiceStatus, InvoiceType } from "../../../entities/models/invoice";
 import { InvoiceRepository } from "./invoices";
 import { CreateInvoiceInput, InvoiceFilterInput } from "../../../usecases/invoices/interfaces";
+import { InvoiceItemType } from "../../../entities/models/invoice_items";
+import { TaxCalcType } from "../../../entities/models/taxes";
 
 describe("InvoicesRepository", () => {
   let invoice: Invoice;
@@ -106,6 +108,195 @@ describe("InvoicesRepository", () => {
       const dbInvoice = await repo.delete(invoice.id);
 
       expect(dbInvoice).toBeUndefined();
+    });
+  });
+
+  describe("aggregate functions", () => {
+    const queryResultItemTemplate = {
+      id: "1",
+      invoice_id: "1",
+      type: InvoiceItemType.Service,
+      name: "name",
+      description: "description",
+      quantity: 1,
+      price: 100,
+      tax_id: null,
+      item_created_at: new Date().toISOString(),
+      item_updated_at: new Date().toISOString(),
+      item_deleted_at: null,
+      tax_user_id: "1",
+      tax_name: "tax",
+      tax_rate: 10,
+      tax_calc_type: TaxCalcType.Percentage,
+      tax_created_at: new Date().toISOString(),
+      tax_updated_at: new Date().toISOString(),
+      tax_deleted_at: null,
+    };
+
+    it("should return discount amount", async () => {
+      const dbPool = makePool([
+        {
+          ...queryResultItemTemplate,
+          type: InvoiceItemType.Discount,
+        },
+      ]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getDiscount(invoice.id);
+
+      expect(amount).toEqual(100);
+    });
+
+    it("should return 0 discount amount", async () => {
+      const dbPool = makePool([]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getDiscount(invoice.id);
+
+      expect(amount).toEqual(0);
+    });
+
+    it("should return tax amount", async () => {
+      const dbPool = makePool([queryResultItemTemplate]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getTaxAmount(invoice.id);
+
+      expect(amount).toEqual(10);
+    });
+
+    it("should return 0 tax amount", async () => {
+      const dbPool = makePool([]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getTaxAmount(invoice.id);
+
+      expect(amount).toEqual(0);
+    });
+
+    it("should return subtotal amount", async () => {
+      const dbPool = makePool([queryResultItemTemplate]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getSubtotal(invoice.id);
+
+      expect(amount).toEqual(100);
+    });
+
+    it("should return 0 subtotal amount", async () => {
+      const dbPool = makePool([]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getSubtotal(invoice.id);
+
+      expect(amount).toEqual(0);
+    });
+
+    it("should return total amount", async () => {
+      const dbPool = makePool([queryResultItemTemplate]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getTotal(invoice.id);
+
+      expect(amount).toEqual(110);
+    });
+
+    it("should return 0 total amount", async () => {
+      const dbPool = makePool([]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getTotal(invoice.id);
+
+      expect(amount).toEqual(0);
+    });
+
+    it("should return taxable amount", async () => {
+      const dbPool = makePool([queryResultItemTemplate]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getTaxableAmount(invoice.id);
+
+      expect(amount).toEqual(100);
+    });
+
+    it("should return 0 taxable amount", async () => {
+      const dbPool = makePool([]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getTaxableAmount(invoice.id);
+
+      expect(amount).toEqual(0);
+    });
+
+    it("should return non taxable amount", async () => {
+      const dbPool = makePool([
+        {
+          ...queryResultItemTemplate,
+          tax_id: null,
+          tax_name: null,
+          tax_rate: null,
+          tax_calc_type: null,
+        },
+      ]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getNonTaxableAmount(invoice.id);
+
+      expect(amount).toEqual(100);
+    });
+
+    it("should return 0 non taxable amount", async () => {
+      const dbPool = makePool([]);
+      const repo = new InvoiceRepository(dbPool);
+      const amount = await repo.getNonTaxableAmount(invoice.id);
+
+      expect(amount).toEqual(0);
+    });
+
+    it("should return taxes list", async () => {
+      const dbPool = makePool([queryResultItemTemplate]);
+      const repo = new InvoiceRepository(dbPool);
+      const taxes = await repo.getInvoiceTaxes(invoice.id);
+
+      expect(taxes).toEqual([
+        {
+          id: queryResultItemTemplate.tax_id,
+          name: queryResultItemTemplate.tax_name,
+          rate: queryResultItemTemplate.tax_rate,
+          calc_type: queryResultItemTemplate.tax_calc_type,
+          user_id: queryResultItemTemplate.tax_user_id,
+          created_at: new Date(queryResultItemTemplate.tax_created_at),
+          updated_at: new Date(queryResultItemTemplate.tax_updated_at),
+          deleted_at: undefined,
+        },
+      ]);
+    });
+
+    it("should return empty taxes list", async () => {
+      const dbPool = makePool([]);
+      const repo = new InvoiceRepository(dbPool);
+      const taxes = await repo.getInvoiceTaxes(invoice.id);
+
+      expect(taxes).toEqual([]);
+    });
+
+    it("should return items list", async () => {
+      const dbPool = makePool([queryResultItemTemplate]);
+      const repo = new InvoiceRepository(dbPool);
+      const taxes = await repo.getInvoiceItems(invoice.id);
+
+      expect(taxes).toEqual([
+        {
+          id: queryResultItemTemplate.id,
+          invoice_id: queryResultItemTemplate.invoice_id,
+          type: queryResultItemTemplate.type,
+          name: queryResultItemTemplate.name,
+          description: queryResultItemTemplate.description,
+          quantity: queryResultItemTemplate.quantity,
+          price: queryResultItemTemplate.price,
+          tax_id: queryResultItemTemplate.tax_id,
+          created_at: new Date(queryResultItemTemplate.item_created_at),
+          updated_at: new Date(queryResultItemTemplate.item_updated_at),
+          deleted_at: undefined,
+        },
+      ]);
+    });
+
+    it("should return empty items list", async () => {
+      const dbPool = makePool([]);
+      const repo = new InvoiceRepository(dbPool);
+      const taxes = await repo.getInvoiceItems(invoice.id);
+
+      expect(taxes).toEqual([]);
     });
   });
 });

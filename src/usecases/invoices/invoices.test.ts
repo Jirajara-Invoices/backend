@@ -10,6 +10,8 @@ import {
 } from "./interfaces";
 import { ValidationError } from "../../entities/errors";
 import { InvoiceUseCase } from "./usecase";
+import { Tax, TaxCalcType } from "../../entities/models/taxes";
+import { InvoiceItem, InvoiceItemType } from "../../entities/models/invoice_items";
 
 describe("Invoices tests suites", () => {
   let invoiceRepository: IMock<InvoiceRepositoryPort>;
@@ -240,6 +242,123 @@ describe("Invoices tests suites", () => {
       };
 
       await expect(invoiceUseCase.findAll(filter)).rejects.toThrowError(ValidationError);
+    });
+  });
+
+  describe("get invoices aggregate values: items, taxes and amounts", () => {
+    it("should return the discount amount", async () => {
+      invoiceRepository
+        .setup((x) => x.findByID)
+        .returns(() => Promise.resolve(invoice))
+        .setup((x) => x.getDiscount)
+        .returns(() => Promise.resolve(10));
+      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+
+      await expect(invoiceUseCase.getDiscount(invoice.id)).resolves.toBe(10);
+    });
+
+    it("should return the taxes items", async () => {
+      const taxes: Tax[] = [
+        {
+          id: "1",
+          name: "IVA",
+          rate: 21,
+          calc_type: TaxCalcType.Percentage,
+          user_id: "1",
+          created_at: new Date(),
+          updated_at: new Date(),
+          deleted_at: undefined,
+        },
+      ];
+      invoiceRepository
+        .setup((x) => x.findByID)
+        .returns(() => Promise.resolve(invoice))
+        .setup((x) => x.getInvoiceTaxes)
+        .returns(() => Promise.resolve(taxes));
+      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+
+      await expect(invoiceUseCase.getInvoiceTaxes(invoice.id)).resolves.toEqual(taxes);
+    });
+
+    it("should return the non taxable amount", async () => {
+      invoiceRepository
+        .setup((x) => x.findByID)
+        .returns(() => Promise.resolve(invoice))
+        .setup((x) => x.getNonTaxableAmount)
+        .returns(() => Promise.resolve(15.15));
+      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+
+      await expect(invoiceUseCase.getNonTaxableAmount(invoice.id)).resolves.toEqual(15.15);
+    });
+
+    it("should return the sub total amount", async () => {
+      invoiceRepository
+        .setup((x) => x.findByID)
+        .returns(() => Promise.resolve(invoice))
+        .setup((x) => x.getSubtotal)
+        .returns(() => Promise.resolve(101.36));
+      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+
+      await expect(invoiceUseCase.getSubtotal(invoice.id)).resolves.toEqual(101.36);
+    });
+
+    it("should return the taxable amount", async () => {
+      invoiceRepository
+        .setup((x) => x.findByID)
+        .returns(() => Promise.resolve(invoice))
+        .setup((x) => x.getTaxableAmount)
+        .returns(() => Promise.resolve(30.36));
+      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+
+      await expect(invoiceUseCase.getTaxableAmount(invoice.id)).resolves.toEqual(30.36);
+    });
+
+    it("should return the taxes amount", async () => {
+      invoiceRepository
+        .setup((x) => x.findByID)
+        .returns(() => Promise.resolve(invoice))
+        .setup((x) => x.getTaxAmount)
+        .returns(() => Promise.resolve(21.5));
+      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+
+      await expect(invoiceUseCase.getTaxAmount(invoice.id)).resolves.toEqual(21.5);
+    });
+
+    it("should return the total amount", async () => {
+      invoiceRepository
+        .setup((x) => x.findByID)
+        .returns(() => Promise.resolve(invoice))
+        .setup((x) => x.getTotal)
+        .returns(() => Promise.resolve(101.36));
+      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+
+      await expect(invoiceUseCase.getTotal(invoice.id)).resolves.toEqual(101.36);
+    });
+
+    it("should return the invoice items", async () => {
+      const items: InvoiceItem[] = [
+        {
+          id: "1",
+          invoice_id: "1",
+          type: InvoiceItemType.Product,
+          name: "IVA",
+          description: "IVA",
+          quantity: 1,
+          price: 21,
+          tax_id: "1",
+          created_at: new Date(),
+          updated_at: new Date(),
+          deleted_at: undefined,
+        },
+      ];
+      invoiceRepository
+        .setup((x) => x.findByID)
+        .returns(() => Promise.resolve(invoice))
+        .setup((x) => x.getInvoiceItems)
+        .returns(() => Promise.resolve(items));
+      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+
+      await expect(invoiceUseCase.getInvoiceItems(invoice.id)).resolves.toEqual(items);
     });
   });
 });
