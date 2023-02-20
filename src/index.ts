@@ -117,7 +117,7 @@ app.use(
     cookie: {
       path: "/",
       maxAge: parseInt(process.env.SESSION_MAX_AGE || "31536000"),
-      sameSite: isProduction ? "lax" : "none",
+      sameSite: "lax",
       secure: isProduction,
       httpOnly: isProduction,
     },
