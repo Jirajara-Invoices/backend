@@ -243,19 +243,20 @@ describe("InvoicesRepository", () => {
     });
 
     it("should return taxes list", async () => {
-      const dbPool = makePool([queryResultItemTemplate]);
+      const newResult = { ...queryResultItemTemplate, tax_id: "1" };
+      const dbPool = makePool([newResult]);
       const repo = new InvoiceRepository(dbPool);
       const taxes = await repo.getInvoiceTaxes(invoice.id);
 
       expect(taxes).toEqual([
         {
-          id: queryResultItemTemplate.tax_id,
-          name: queryResultItemTemplate.tax_name,
-          rate: queryResultItemTemplate.tax_rate,
-          calc_type: queryResultItemTemplate.tax_calc_type,
-          user_id: queryResultItemTemplate.tax_user_id,
-          created_at: new Date(queryResultItemTemplate.tax_created_at),
-          updated_at: new Date(queryResultItemTemplate.tax_updated_at),
+          id: newResult.tax_id,
+          name: newResult.tax_name,
+          rate: newResult.tax_rate,
+          calc_type: newResult.tax_calc_type,
+          user_id: newResult.tax_user_id,
+          created_at: new Date(newResult.tax_created_at),
+          updated_at: new Date(newResult.tax_updated_at),
           deleted_at: undefined,
         },
       ]);

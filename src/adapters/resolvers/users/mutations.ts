@@ -1,4 +1,4 @@
-import { GraphQLContext } from "../../../utilities/context";
+import { GraphQLContext, setUserAuthCache } from "../../../utilities/context";
 import { CreateUserInput, UpdateUserInput } from "../../../usecases/users/interfaces";
 import { mapGraphQLError, ValidationError } from "../../../entities/errors";
 
@@ -23,12 +23,15 @@ export const userMutationResolvers = {
   updateUser: async (
     _: any,
     { input }: { input: UpdateUserInput },
-    { useCases }: GraphQLContext,
+    { redis, useCases }: GraphQLContext,
   ) => {
     const useCase = useCases.users;
 
     try {
-      return await useCase.update(input);
+      const user = await useCase.update(input);
+      await setUserAuthCache(redis, user);
+
+      return user;
     } catch (error) {
       if (error instanceof ValidationError) {
         throw mapGraphQLError(error);
@@ -37,11 +40,12 @@ export const userMutationResolvers = {
       throw error;
     }
   },
-  deleteUser: async (_: any, { id }: { id: string }, { useCases }: GraphQLContext) => {
+  deleteUser: async (_: any, { id }: { id: string }, { redis, useCases }: GraphQLContext) => {
     const useCase = useCases.users;
 
     try {
       await useCase.delete(id);
+      await redis.hdel(id);
 
       return true;
     } catch (error) {
@@ -56,7 +60,7 @@ export const userMutationResolvers = {
   login: async (
     _: any,
     { email, password }: { email: string; password: string },
-    { logger, useCases, req }: GraphQLContext,
+    { logger, useCases, req, redis }: GraphQLContext,
   ) => {
     const useCase = useCases.users;
 
@@ -66,6 +70,7 @@ export const userMutationResolvers = {
       req.sessionStore.generate(req);
 
       req.session.userId = user.id;
+      await setUserAuthCache(redis, user);
 
       return user;
     } catch (error) {
@@ -76,7 +81,8 @@ export const userMutationResolvers = {
       throw error;
     }
   },
-  logout: async (_: any, __: any, { logger, req }: GraphQLContext) => {
+  logout: async (_: any, __: any, { logger, req, redis, auth: { user } }: GraphQLContext) => {
+    user?.id && (await redis.hdel(user.id));
     req.session.destroy((err) => logger.error(err));
     req.sessionStore.generate(req);
 

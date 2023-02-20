@@ -177,7 +177,7 @@ app.use(
   csrfGenerateHandler,
   csrfErrorHandler,
   expressMiddleware(apollo, {
-    context: createContextFactory(pool),
+    context: createContextFactory(pool, redis),
   }),
 );
 

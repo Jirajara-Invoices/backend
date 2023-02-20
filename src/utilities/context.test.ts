@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
-import { Mock } from "moq.ts";
+import { It, Mock } from "moq.ts";
 
 import { createContextFactory, SessionContext } from "./context";
 import { makePool } from "./mock";
+import Redis from "ioredis";
 
 describe("context", () => {
   it("should be able to create a context", async () => {
@@ -22,7 +23,15 @@ describe("context", () => {
       .setup((instance) => instance)
       .returns({} as Response)
       .object();
-    const contextFactory = createContextFactory(pool);
+    const redis = new Mock<Redis>()
+      .setup((x) => x.hgetall(It.IsAny()))
+      .returns(Promise.resolve({} as any))
+      .setup((x) => x.hset(It.IsAny(), It.IsAny()))
+      .returns(Promise.resolve(1))
+      .setup((x) => x.hdel(It.IsAny(), It.IsAny()))
+      .returns(Promise.resolve(1))
+      .object();
+    const contextFactory = createContextFactory(pool, redis);
     const context = await contextFactory({ req, res });
 
     expect(context).toBeDefined();

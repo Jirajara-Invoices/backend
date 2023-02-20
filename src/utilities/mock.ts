@@ -1,3 +1,4 @@
+import Redis from "ioredis";
 import { Request } from "express";
 import { It, Mock } from "moq.ts";
 import { createMockPool, createMockQueryResult, QueryResultRow } from "slonik";
@@ -85,9 +86,18 @@ export function createMockContextFactory(input: mockContextInput): MockContext {
       .setup((x) => x.findByID)
       .returns(() => Promise.resolve({} as any))
       .object();
+  const redis = new Mock<Redis>()
+    .setup((x) => x.hgetall(It.IsAny()))
+    .returns(Promise.resolve({} as any))
+    .setup((x) => x.hset(It.IsAny(), It.IsAny()))
+    .returns(Promise.resolve(1))
+    .setup((x) => x.hdel(It.IsAny(), It.IsAny()))
+    .returns(Promise.resolve(1))
+    .object();
 
   return (user): GraphQLContext => ({
     logger: logger,
+    redis: redis,
     useCases: {
       users: mockUserUseCase,
       addresses: mockAddressUseCase,

@@ -1,12 +1,13 @@
+import Redis from "ioredis";
 import { ContextFunction } from "@apollo/server/src/externalTypes";
 import { ExpressContextFunctionArgument } from "@apollo/server/src/express4";
 import { Session, SessionData } from "express-session";
-import { DatabasePool } from "slonik";
 
+import { DatabasePool } from "slonik";
 import { UserUseCasePort } from "../usecases/users/interfaces";
 import { UserUseCase } from "../usecases/users/usecase";
 import { UserRepository } from "../adapters/repositories/users/users";
-import { User } from "../entities/models/users";
+import { User, UserRole } from "../entities/models/users";
 import { LoggerAdapter } from "../adapters/common/logger";
 import { LoggerUseCasePort } from "../usecases/common/interfaces";
 import { AddressUseCasePort } from "../usecases/addresses/interfaces";
@@ -27,6 +28,7 @@ export type SessionContext = Session & Partial<SessionData>;
 
 export interface GraphQLContext {
   logger: LoggerUseCasePort;
+  redis: Redis;
   useCases: {
     users: UserUseCasePort;
     addresses: AddressUseCasePort;
@@ -89,12 +91,20 @@ function instantiateInvoiceItemsUseCase(
 async function getAuthUser(
   session: SessionContext,
   useCase: UserUseCasePort,
+  redis: Redis,
   log: LoggerUseCasePort,
 ): Promise<User | null> {
   const userId = session.userId;
   if (userId) {
+    const userCached = await getUserCached(redis, userId);
+    if (userCached) {
+      return userCached;
+    }
     try {
-      return await useCase.findByID(userId, true);
+      const user = await useCase.findByID(userId, true);
+      await setUserAuthCache(redis, user);
+
+      return user;
     } catch (error) {
       log.error("Failed to get user from session");
     }
@@ -103,19 +113,52 @@ async function getAuthUser(
   return null;
 }
 
+export async function getUserCached(redis: Redis, userId: string): Promise<User | null> {
+  const userCached = await redis.hgetall(userId);
+  if (userCached && userCached.id) {
+    return {
+      id: userCached.id,
+      name: userCached.name,
+      email: userCached.email,
+      country: userCached.country,
+      role: userCached.role === "admin" ? UserRole.Admin : UserRole.User,
+      created_at: new Date(userCached.created_at),
+      updated_at: new Date(userCached.updated_at),
+    };
+  }
+
+  return null;
+}
+
+export async function setUserAuthCache(redis: Redis, user: User): Promise<void> {
+  const userCached = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    country: user.country,
+    role: user.role,
+    created_at: user.created_at.toISOString(),
+    updated_at: user.updated_at.toISOString(),
+  };
+  await redis.hset(user.id, userCached);
+}
+
 export const createContextFactory = (
   dbPool: DatabasePool,
+  redis?: Redis,
 ): ContextFunction<[ExpressContextFunctionArgument], GraphQLContext> => {
   return async ({ req }) => {
     const log = new LoggerAdapter(logger.child({ session: req.session.id }));
 
     const userUseCase = instantiateUserUseCase(dbPool, log);
+    const redisClient = redis ?? new Redis();
 
-    const user = await getAuthUser(req.session, userUseCase, log);
+    const user = await getAuthUser(req.session, userUseCase, redisClient, log);
     userUseCase.setCurrentUser(user);
 
     return {
       logger: log,
+      redis: redisClient,
       useCases: {
         users: userUseCase,
         addresses: instantiateAddressUseCase(dbPool, log, user),
