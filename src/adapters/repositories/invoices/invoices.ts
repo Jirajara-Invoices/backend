@@ -366,7 +366,7 @@ export class InvoiceRepository implements InvoiceRepositoryPort {
   ): Promise<readonly InvoiceItemAndTax[]> {
     const result = await this.dbPool.query(
       sql.type(invoiceItemAndTaxSchema)`
-        SELECT (
+        SELECT
           ii.id,
           ii.invoice_id,
           ii.name,
@@ -380,11 +380,10 @@ export class InvoiceRepository implements InvoiceRepositoryPort {
           t.user_id AS tax_user_id,
           t.name AS tax_name,
           t.rate AS tax_rate,
-          t.type AS tax_type,
+          t.calc_type AS tax_calc_type,
           t.created_at AS tax_created_at,
-          t.updated_at AS tax_updated_at
+          t.updated_at AS tax_updated_at,
           t.deleted_at AS tax_deleted_at
-        ) 
         FROM invoice_items ii
         LEFT JOIN taxes t ON t.id = ii.tax_id
         WHERE ii.invoice_id = ${invoiceId}${
