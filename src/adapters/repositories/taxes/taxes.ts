@@ -1,3 +1,4 @@
+import { createId } from "@paralleldrive/cuid2";
 import { DatabasePool, sql } from "slonik";
 import { z } from "zod";
 import {
@@ -80,10 +81,11 @@ export class TaxRepository implements TaxesRepositoryPort {
   }
 
   async create(input: CreateTaxInput, userId: string): Promise<Tax> {
+    const tax_id = createId();
     const result = await this.dbPool.query(
       sql.type(taxZodSchema)`
-        INSERT INTO taxes (user_id, calc_type, name, rate)
-        VALUES (${userId}, ${input.calc_type}, ${input.name}, ${input.rate})
+        INSERT INTO taxes (id, user_id, calc_type, name, rate)
+        VALUES (${tax_id}, ${userId}, ${input.calc_type}, ${input.name}, ${input.rate})
         RETURNING *
       `,
     );
@@ -116,9 +118,7 @@ export class TaxRepository implements TaxesRepositoryPort {
   async delete(id: string): Promise<void> {
     await this.dbPool.query(
       sql.type(taxZodSchema)`
-        UPDATE taxes
-        SET deleted_at = now()
-        WHERE id = ${id}
+        DELETE FROM taxes WHERE id = ${id}
       `,
     );
   }

@@ -214,9 +214,9 @@ export class InvoiceRepository implements InvoiceRepositoryPort {
     const sqlFields = fieldsToUpdate.map((field) => {
       const value = input[field as keyof typeof input] || "";
       if (value instanceof Date) {
-        return sql.fragment`${sql.identifier([field])} = ${sql.date(value)}}`;
+        return sql.fragment`${sql.identifier([field])} = ${sql.date(value)}`;
       }
-      return sql.fragment`${sql.identifier([field])} = ${value}}`;
+      return sql.fragment`${sql.identifier([field])} = ${value}`;
     });
 
     const invoice = await this.dbPool.query(
@@ -250,7 +250,7 @@ export class InvoiceRepository implements InvoiceRepositoryPort {
 
   async getInvoiceTaxes(invoiceId: string): Promise<Tax[]> {
     const taxes = await this.getInvoiceItemsAndTaxes(invoiceId);
-    const invoiceTaxes = taxes.filter((tax) => tax.tax_id !== undefined);
+    const invoiceTaxes = taxes.filter((tax) => tax.tax_id);
 
     return invoiceTaxes.map((tax) => ({
       id: tax.tax_id!,

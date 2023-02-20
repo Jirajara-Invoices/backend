@@ -56,9 +56,14 @@ const mapInvoiceItem = (invoiceItem: InvoiceItemZodSchema): InvoiceItem => ({
 export class InvoiceItemRepository implements InvoiceItemRepositoryPort {
   constructor(private dbPool: DatabasePool) {}
 
-  async findByID(id: string): Promise<InvoiceItem> {
+  async findByID(id: string, userId: string | null): Promise<InvoiceItem> {
     const result: InvoiceItemZodSchema = await this.dbPool.one(
-      sql.type(invoiceItemZodSchema)`SELECT * FROM invoice_items WHERE id = ${id}`,
+      sql.type(invoiceItemZodSchema)`
+        SELECT ii.*
+        FROM invoice_items ii
+        INNER JOIN invoices iv ON iv.id = ii.invoice_id
+        WHERE id = ${id}${userId ? sql.fragment` AND user_id = ${userId}` : sql.fragment``}
+      `,
     );
 
     return mapInvoiceItem(result);
@@ -66,26 +71,31 @@ export class InvoiceItemRepository implements InvoiceItemRepositoryPort {
 
   async findAll(filter: ItemsFilterInput, userId: string | null): Promise<InvoiceItem[]> {
     const whereClauses = [];
-    if (filter.invoiceId) whereClauses.push(sql.unsafe`invoice_id = ${filter.invoiceId}`);
-    if (filter.type) whereClauses.push(sql.unsafe`type = ${filter.type}`);
-    if (filter.name) whereClauses.push(sql.unsafe`name = ${filter.name}`);
-    if (filter.taxId) whereClauses.push(sql.unsafe`description = ${filter.taxId}`);
-    if (userId) whereClauses.push(sql.unsafe`user_id = ${userId}`);
+    if (filter.invoiceId) whereClauses.push(sql.unsafe`ii.invoice_id = ${filter.invoiceId}`);
+    if (filter.type) whereClauses.push(sql.unsafe`ii.type = ${filter.type}`);
+    if (filter.name) whereClauses.push(sql.unsafe`ii.name = ${filter.name}`);
+    if (filter.taxId) whereClauses.push(sql.unsafe`ii.description = ${filter.taxId}`);
+    if (userId) whereClauses.push(sql.unsafe`iv.user_id = ${userId}`);
 
     if (filter.cursor) {
       const direction =
         filter.cursorDirection === undefined || filter.cursorDirection === "ASC"
           ? sql.fragment`>`
           : sql.fragment`<`;
-      whereClauses.push(sql.unsafe`created_at ${direction} ${filter.cursor}`);
+      whereClauses.push(sql.unsafe`ii.created_at ${direction} ${filter.cursor}`);
     }
 
     const sqlQueryArray = [
-      sql.fragment`SELECT * FROM invoice_items`,
+      sql.fragment`
+        SELECT
+            ii.*
+        FROM invoice_items ii
+      `,
+      sql.fragment`JOIN invoices iv ON ii.invoice_id = iv.id`,
       whereClauses.length > 0
         ? sql.fragment`WHERE ${sql.join(whereClauses, sql.fragment` AND `)}`
         : sql.fragment``,
-      sql.fragment`ORDER BY created_at ${
+      sql.fragment`ORDER BY ii.created_at ${
         filter.direction === "ASC" ? sql.fragment`ASC` : sql.fragment`DESC`
       }`,
       sql.fragment`LIMIT ${filter.limit}`,
@@ -130,11 +140,13 @@ export class InvoiceItemRepository implements InvoiceItemRepositoryPort {
 
     const result = await this.dbPool.query(
       sql.type(invoiceItemZodSchema)`
-        UPDATE invoice_items ii
+        UPDATE invoice_items
         SET ${sql.join(sqlFields, sql.fragment`, `)}, updated_at = current_timestamp
-        INNER JOIN invoices i ON ii.invoice_id = i.id
-        WHERE ii.id = ${input.id} AND i.user_id = ${userId}
-        RETURNING *
+        FROM invoices
+        WHERE invoices.id = invoice_items.invoice_id AND invoice_items.id = ${
+          input.id
+        } AND invoices.user_id = ${userId}
+        RETURNING invoice_items.*
       `,
     );
 
@@ -144,9 +156,9 @@ export class InvoiceItemRepository implements InvoiceItemRepositoryPort {
   async delete(id: string, userId: string): Promise<void> {
     await this.dbPool.query(
       sql.type(invoiceItemZodSchema)`
-        DELETE invoice_items FROM invoice_items
-        INNER JOIN invoices ON invoice_items.invoice_id = invoices.id
-        WHERE invoice_items.id = ${id} AND invoices.user_id = ${userId}
+        DELETE FROM invoice_items
+        USING invoices
+        WHERE invoice_items.invoice_id = invoices.id AND invoice_items.id = ${id} AND invoices.user_id = ${userId}
         RETURNING *
       `,
     );

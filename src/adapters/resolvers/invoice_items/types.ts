@@ -9,7 +9,12 @@ export const invoiceItemTypeResolvers = {
   quantity: (invoiceItem: InvoiceItem) => invoiceItem.quantity,
   price: (invoiceItem: InvoiceItem) => invoiceItem.price,
   type: (invoiceItem: InvoiceItem) => invoiceItem.type.toUpperCase(),
-  tax: (invoiceItem: InvoiceItem) => invoiceItem.tax,
+  tax: async (invoiceItem: InvoiceItem, _: unknown, { useCases }: GraphQLContext) => {
+    if (invoiceItem.tax_id) {
+      const taxUseCase = useCases.taxes;
+      return await taxUseCase.findByID(invoiceItem.tax_id);
+    }
+  },
   taxAmount: async (invoiceItem: InvoiceItem, _: unknown, { useCases }: GraphQLContext) => {
     let amount = 0;
     if (invoiceItem.tax_id) {
