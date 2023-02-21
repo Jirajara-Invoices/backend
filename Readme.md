@@ -1,7 +1,7 @@
 # Jirajara backend server
 
 This is the backend server for Jirajara, a web application that helps you with your
-personal accounting and business.
+personal invoicing and simple accounting.
 
 ### Requirements
   - NodeJS 18.x
@@ -10,15 +10,21 @@ personal accounting and business.
   - Redis 6.x
   - Docker
 
-# Roadmap
-  - [ ] Invoicing (products and services)
-    - [ ] Create invoice
-    - [ ] Preview invoice
-    - [ ] Send & print invoice
-    - [ ] Invoice management and dashboard
+### Installation
+  - Run `docker compose up` to start the database, redis and the backend server
+  - Run `docker compose exec backend pnpm run migrate up` to sync the database schema
+  - Open http://0.0.0.0:4000 to see the server running and http://0.0.0.0:4000/graphql to test the playground
+
+## Roadmap (WIP)
+  - [x] User management
+  - [x] Authentication
+  - [x] Simple addresses management
+  - [x] Simple invoices and taxes management
+  - [ ] Add translations
+  - [ ] Send Invoices by email
   - [ ] Product management
+  - [ ] Inventory management
   - [ ] Point of sale (POS) system (for physical products)
   - [ ] Customer management
 
 New features are welcome!
-    
