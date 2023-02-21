@@ -33,6 +33,7 @@ import { createContextFactory, GraphQLContext } from "./utilities/context";
 import { createQueryLoggingInterceptor } from "slonik-interceptor-query-logging";
 import { createAuthDirective } from "./utilities/auth";
 import { morganMiddleware } from "./utilities/morgan";
+import { generatePDF } from "./adapters/controllers/generatePDF";
 
 const envConfig = dotenv.config();
 dotenvExpand.expand(envConfig);
@@ -179,6 +180,15 @@ app.use(
   expressMiddleware(apollo, {
     context: createContextFactory(pool, redis),
   }),
+);
+
+app.use(
+  "/download-invoice/:id",
+  cors<cors.CorsRequest>({}),
+  bodyParser.json(),
+  csrfGenerateHandler,
+  csrfErrorHandler,
+  generatePDF(pool, redis),
 );
 
 await new Promise<void>((resolve) => httpServer.listen({ port: 4000, host: "0.0.0.0" }, resolve));

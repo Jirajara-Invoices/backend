@@ -87,6 +87,13 @@ export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
     this.addInvoiceItems();
     this.addInvoiceTotals();
 
+    this.doc?.setDocumentProperties({
+      author: this.address?.name,
+      title: `Invoice ${this.invoice?.number}`,
+      creator: "Jirajara Invoice Generator",
+      subject: "Invoice",
+    });
+
     const blob = this.doc?.output("blob");
     if (!blob) {
       throw new Error("Error generating PDF");
@@ -253,6 +260,18 @@ export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
       price: this.numIntl.format(item.price),
       total: this.numIntl.format(item.price * item.quantity),
     }));
+
+    if (itemsData.length < 10) {
+      const length = itemsData.length;
+      for (let i = 0; i < 10 - length; i++) {
+        itemsData.push({
+          concept: " ",
+          quantity: " ",
+          price: " ",
+          total: " ",
+        });
+      }
+    }
 
     this.doc.table(10, 110, itemsData, this.tableHeaders, {
       headerTextColor: this.TITLE_COLOR,

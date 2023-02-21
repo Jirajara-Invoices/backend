@@ -88,7 +88,7 @@ function instantiateInvoiceItemsUseCase(
   return new InvoiceItemUseCase(invoiceItemsRepository, logger, currentUser);
 }
 
-async function getAuthUser(
+export async function getAuthUser(
   session: SessionContext,
   useCase: UserUseCasePort,
   redis: Redis,
