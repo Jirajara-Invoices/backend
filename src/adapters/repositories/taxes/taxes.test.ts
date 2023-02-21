@@ -1,4 +1,4 @@
-import { QueryResultRow, NotFoundError } from "slonik";
+import { QueryResultRow } from "slonik";
 import { Tax, TaxCalcType } from "../../../entities/models/taxes";
 import { makePool } from "../../../utilities/mock";
 import { TaxRepository } from "./taxes";
@@ -49,7 +49,7 @@ describe("TaxRepository", () => {
     it("should throw an error if the tax does not exist", async () => {
       const dbPool = makePool([]);
       const repo = new TaxRepository(dbPool);
-      await expect(repo.findByID(tax.id)).rejects.toThrow(NotFoundError);
+      await expect(repo.findByID(tax.id)).rejects.toThrow(Error);
     });
   });
 

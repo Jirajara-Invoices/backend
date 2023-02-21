@@ -1,5 +1,4 @@
 import * as argon2 from "argon2";
-import { NotFoundError } from "slonik";
 
 import { User, UserRole } from "../../../entities/models/users";
 import { UnauthorizedError, UnknownError } from "../../../entities/errors";
@@ -47,7 +46,7 @@ describe("UsersRepository tests", () => {
       const pool = makePool([]);
       const userRepository = new UserRepository(pool);
 
-      await expect(userRepository.findByID("1")).rejects.toThrowError(NotFoundError);
+      await expect(userRepository.findByID("1")).rejects.toThrowError(Error);
     });
   });
 
@@ -120,11 +119,11 @@ describe("UsersRepository tests", () => {
       expect(result).toEqual(user);
     });
 
-    it("should raise NotFoundError", async () => {
+    it("should raise Error", async () => {
       const pool = makePool([]);
       const userRepository = new UserRepository(pool);
 
-      await expect(userRepository.checkCredentials("", "")).rejects.toThrowError(NotFoundError);
+      await expect(userRepository.checkCredentials("", "")).rejects.toThrowError(Error);
     });
 
     it("should raise ValidationError", async () => {

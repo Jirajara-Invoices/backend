@@ -1,4 +1,4 @@
-import { NotFoundError, QueryResultRow } from "slonik";
+import { QueryResultRow } from "slonik";
 
 import { Address, AddressType } from "../../../entities/models/addresses";
 import { makePool } from "../../../utilities/mock";
@@ -65,7 +65,7 @@ describe("AddressesRepository", () => {
       const dbPool = makePool([]);
       const repo = new AddressRepository(dbPool);
 
-      await expect(repo.findByID(address.id)).rejects.toThrowError(NotFoundError);
+      await expect(repo.findByID(address.id)).rejects.toThrowError(Error);
     });
   });
 

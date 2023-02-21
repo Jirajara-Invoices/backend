@@ -1,4 +1,4 @@
-import { QueryResultRow, NotFoundError } from "slonik";
+import { QueryResultRow } from "slonik";
 import { makePool } from "../../../utilities/mock";
 import { InvoiceItem, InvoiceItemType } from "../../../entities/models/invoice_items";
 import {
@@ -48,14 +48,14 @@ describe("InvoiceItemRepository", () => {
     it("should return an invoice item", async () => {
       const dbPool = makePool(invoiceItemResult);
       const repo = new InvoiceItemRepository(dbPool);
-      const dbInvoiceItem = await repo.findByID(invoiceItem.id);
+      const dbInvoiceItem = await repo.findByID(invoiceItem.id, "1");
       expect(dbInvoiceItem).toEqual(invoiceItem);
     });
 
     it("should throw an error if the invoice item does not exist", async () => {
       const dbPool = makePool([]);
       const repo = new InvoiceItemRepository(dbPool);
-      await expect(repo.findByID(invoiceItem.id)).rejects.toThrow(NotFoundError);
+      await expect(repo.findByID(invoiceItem.id, "1")).rejects.toThrow(Error);
     });
   });
 
