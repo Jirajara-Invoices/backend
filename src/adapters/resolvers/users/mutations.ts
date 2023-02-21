@@ -82,7 +82,7 @@ export const userMutationResolvers = {
     }
   },
   logout: async (_: any, __: any, { logger, req, redis, auth: { user } }: GraphQLContext) => {
-    user?.id && (await redis.hdel(user.id));
+    user?.id && (await redis.del(user.id));
     req.session.destroy((err) => logger.error(err));
     req.sessionStore.generate(req);
 

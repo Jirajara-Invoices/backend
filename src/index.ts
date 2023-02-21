@@ -45,6 +45,7 @@ const typeDefs = readFileSync("./schema.graphql", { encoding: "utf-8" });
 const isProduction = process.env.NODE_ENV === "production";
 
 const redis = new Redis({
+  host: process.env.REDIS_HOST || "localhost",
   enableAutoPipelining: true,
 });
 const RedisStore = connectRedis(expressSession);
