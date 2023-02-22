@@ -25,6 +25,7 @@ describe("relay utilities tests", () => {
       after: encodedCursor,
       last: undefined,
       before: undefined,
+      filter: {},
     };
     const input = mapGenericFilters(args);
 
@@ -37,7 +38,9 @@ describe("relay utilities tests", () => {
   });
 
   it("should map filters without params", () => {
-    const args = {};
+    const args = {
+      filter: {},
+    };
     const input = mapGenericFilters(args);
 
     expect(input).toEqual({
@@ -54,6 +57,7 @@ describe("relay utilities tests", () => {
       after: undefined,
       last: 10,
       before: encodedCursor,
+      filter: {},
     };
     const input = mapGenericFilters(args);
 
@@ -71,6 +75,7 @@ describe("relay utilities tests", () => {
       after: undefined,
       last: 10,
       before: undefined,
+      filter: {},
     };
     expect(() => mapGenericFilters(args)).toThrowError("Cannot specify both first and last");
   });
@@ -81,6 +86,7 @@ describe("relay utilities tests", () => {
       after: encodedCursor,
       last: undefined,
       before: encodedCursor,
+      filter: {},
     };
     expect(() => mapGenericFilters(args)).toThrowError("Cannot specify both before and after");
   });
