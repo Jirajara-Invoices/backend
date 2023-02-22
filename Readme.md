@@ -11,6 +11,7 @@ personal invoicing and simple accounting.
   - Docker
 
 ### Installation
+  - Rename `.env.example` to `.env` and fill the variables with your own values
   - Run `docker compose up` to start the database, redis and the backend server
   - Run `docker compose exec backend pnpm run migrate up` to sync the database schema
   - Open http://0.0.0.0:4000 to see the server running and http://0.0.0.0:4000/graphql to test the playground

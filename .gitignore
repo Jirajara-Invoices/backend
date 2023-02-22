@@ -216,3 +216,5 @@ dist
 .pnp.*
 
 /**/__snapshots__/
+
+.env
