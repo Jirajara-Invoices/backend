@@ -1,5 +1,5 @@
 import { User } from "../../entities/models/users";
-import { Invoice } from "../../entities/models/invoice";
+import { Invoice, InvoiceStatus, InvoiceType } from "../../entities/models/invoice";
 import { ValidationError } from "../../entities/errors";
 import { BaseUseCase } from "../common/base";
 import { LoggerUseCasePort, TranslationUseCasePort } from "../common/interfaces";
@@ -10,7 +10,6 @@ import {
   InvoiceUseCasePort,
   UpdateInvoiceInput,
 } from "./interfaces";
-import { validateCreateInvoiceInput, validateUpdateInvoiceInput } from "./validators";
 import { Tax } from "../../entities/models/taxes";
 import { InvoiceItem } from "../../entities/models/invoice_items";
 
@@ -25,7 +24,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   }
 
   async create(input: CreateInvoiceInput): Promise<Invoice> {
-    const errors = validateCreateInvoiceInput(input);
+    const errors = this.validateCreateInvoiceInput(input);
     if (errors.size > 0) {
       throw new ValidationError(this.translator.translate("validationError"), errors);
     }
@@ -38,7 +37,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
       throw new ValidationError(this.translator.translate("updatePermissionsError"), new Map());
     }
 
-    const errors = validateUpdateInvoiceInput(invoice, input);
+    const errors = this.validateUpdateInvoiceInput(invoice, input);
     if (errors.size > 0) {
       throw new ValidationError(this.translator.translate("validationError"), errors);
     }
@@ -137,5 +136,69 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
     }
 
     return this.repository.getInvoiceItems(invoiceId);
+  }
+
+  private validateCreateInvoiceInput(input: CreateInvoiceInput): Map<string, string> {
+    const errors: Map<string, string> = new Map();
+    if (!input.address_id) {
+      errors.set("address_id", this.translator.translate("inputInvoiceAddressIdError"));
+    }
+    if (!input.client_address_id) {
+      errors.set(
+        "client_address_id",
+        this.translator.translate("inputInvoiceClientAddressIdError"),
+      );
+    }
+    if (!input.type || !(Object.values(InvoiceType) as string[]).includes(input.type)) {
+      errors.set("type", this.translator.translate("inputInvoiceTypeError"));
+    }
+    if (!input.number) {
+      errors.set("number", this.translator.translate("inputInvoiceNumberError"));
+    }
+    if (!input.date) {
+      errors.set("date", this.translator.translate("inputInvoiceDateError"));
+    }
+    if (!input.due_date || input.due_date < input.date) {
+      errors.set("due_date", this.translator.translate("inputInvoiceDueDateError"));
+    }
+    if (!input.status || !(Object.values(InvoiceStatus) as string[]).includes(input.status)) {
+      errors.set("status", this.translator.translate("inputInvoiceStatusError"));
+    }
+
+    return errors;
+  }
+
+  private validateUpdateInvoiceInput(
+    invoice: Invoice,
+    input: UpdateInvoiceInput,
+  ): Map<string, string> {
+    const errors: Map<string, string> = new Map();
+    if (!input.id) {
+      errors.set("id", this.translator.translate("inputIdError"));
+    }
+
+    if (input.type && !(Object.values(InvoiceType) as string[]).includes(input.type)) {
+      errors.set("type", this.translator.translate("inputInvoiceTypeError"));
+    }
+
+    if (input.status && !(Object.values(InvoiceStatus) as string[]).includes(input.status)) {
+      errors.set("status", this.translator.translate("inputInvoiceStatusError"));
+    }
+
+    if (
+      input.date &&
+      (input.date > invoice.due_date || (input.due_date && input.date > input.due_date))
+    ) {
+      errors.set("date", this.translator.translate("inputInvoiceUpdateDateError"));
+    }
+
+    if (
+      input.due_date &&
+      (input.due_date < invoice.date || (input.date && input.due_date < input.date))
+    ) {
+      errors.set("due_date", this.translator.translate("inputInvoiceUpdateDueDateError"));
+    }
+
+    return errors;
   }
 }

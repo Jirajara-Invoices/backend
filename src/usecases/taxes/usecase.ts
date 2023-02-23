@@ -1,5 +1,5 @@
 import { User } from "../../entities/models/users";
-import { Tax } from "../../entities/models/taxes";
+import { Tax, TaxCalcType } from "../../entities/models/taxes";
 import { ValidationError } from "../../entities/errors";
 import { BaseUseCase } from "../common/base";
 import { LoggerUseCasePort, TranslationUseCasePort } from "../common/interfaces";
@@ -10,7 +10,6 @@ import {
   TaxesUseCasePort,
   UpdateTaxInput,
 } from "./interfaces";
-import { validateCreateTaxInput, validateUpdateTaxInput } from "./validators";
 
 export class TaxUseCase extends BaseUseCase implements TaxesUseCasePort {
   constructor(
@@ -23,7 +22,7 @@ export class TaxUseCase extends BaseUseCase implements TaxesUseCasePort {
   }
 
   async create(input: CreateTaxInput): Promise<Tax> {
-    const errors = validateCreateTaxInput(input);
+    const errors = this.validateCreateTaxInput(input);
     if (errors.size > 0) {
       throw new ValidationError(this.translator.translate("validationError"), errors);
     }
@@ -36,7 +35,7 @@ export class TaxUseCase extends BaseUseCase implements TaxesUseCasePort {
       throw new ValidationError(this.translator.translate("updatePermissionsError"), new Map());
     }
 
-    const errors = validateUpdateTaxInput(input);
+    const errors = this.validateUpdateTaxInput(input);
     if (errors.size > 0) {
       throw new ValidationError(this.translator.translate("validationError"), errors);
     }
@@ -68,5 +67,33 @@ export class TaxUseCase extends BaseUseCase implements TaxesUseCasePort {
     this.validateFilterInputWithUser(filter);
 
     return await this.repository.findAll(filter);
+  }
+
+  private validateCreateTaxInput(input: CreateTaxInput): Map<string, string> {
+    const errors: Map<string, string> = new Map();
+    if (!input.name) {
+      errors.set("name", this.translator.translate("inputNameRequiredError", { length: "1" }));
+    }
+    if (!input.rate) {
+      errors.set("rate", this.translator.translate("inputTaxRateError"));
+    }
+    if (!input.calc_type || !(Object.values(TaxCalcType) as string[]).includes(input.calc_type)) {
+      errors.set("calc_type", this.translator.translate("inputTaxTypeError"));
+    }
+
+    return errors;
+  }
+
+  private validateUpdateTaxInput(input: UpdateTaxInput): Map<string, string> {
+    const errors: Map<string, string> = new Map();
+    if (!input.id) {
+      errors.set("id", this.translator.translate("inputIdError"));
+    }
+
+    if (input.calc_type && !(Object.values(TaxCalcType) as string[]).includes(input.calc_type)) {
+      errors.set("calc_type", this.translator.translate("inputTaxTypeError"));
+    }
+
+    return errors;
   }
 }

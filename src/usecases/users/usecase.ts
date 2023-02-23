@@ -1,8 +1,8 @@
+import { EMAIL_REGEX } from "../../entities/constants";
 import { User } from "../../entities/models/users";
 import { ValidationError } from "../../entities/errors";
 import { BaseUseCase } from "../common/base";
 import { LoggerUseCasePort, TranslationUseCasePort } from "../common/interfaces";
-import { validateFiltersInput } from "../common/validators";
 import {
   CreateUserInput,
   FindUserInput,
@@ -10,7 +10,6 @@ import {
   UserRepositoryPort,
   UserUseCasePort,
 } from "./interfaces";
-import { validateCreateUserInput, validateLoginInput, validateUpdateUserInput } from "./validators";
 
 export class UserUseCase extends BaseUseCase implements UserUseCasePort {
   constructor(
@@ -22,7 +21,7 @@ export class UserUseCase extends BaseUseCase implements UserUseCasePort {
   }
 
   async create(input: CreateUserInput): Promise<User> {
-    const errors = validateCreateUserInput(input);
+    const errors = this.validateCreateUserInput(input);
     if (errors.size > 0) {
       throw new ValidationError(this.translator.translate("validationError"), errors);
     }
@@ -31,7 +30,7 @@ export class UserUseCase extends BaseUseCase implements UserUseCasePort {
   }
 
   async update(input: UpdateUserInput): Promise<User> {
-    const errors = validateUpdateUserInput(input);
+    const errors = this.validateUpdateUserInput(input);
     if (errors.size > 0) {
       throw new ValidationError(this.translator.translate("validationError"), errors);
     }
@@ -65,7 +64,7 @@ export class UserUseCase extends BaseUseCase implements UserUseCasePort {
   }
 
   async findAll(input: FindUserInput): Promise<User[]> {
-    const errors = validateFiltersInput(input);
+    const errors = this.validateFiltersInput(input);
     if (errors.size > 0) {
       throw new ValidationError(this.translator.translate("filtersError"), errors);
     }
@@ -78,11 +77,77 @@ export class UserUseCase extends BaseUseCase implements UserUseCasePort {
   }
 
   async checkCredentials(email: string, password: string): Promise<User> {
-    const errors = validateLoginInput(email, password);
+    const errors = this.validateLoginInput(email, password);
     if (errors.size > 0) {
       throw new ValidationError(this.translator.translate("validationError"), errors);
     }
 
     return await this.userRepository.checkCredentials(email, password);
+  }
+
+  private validateCreateUserInput(input: CreateUserInput): Map<string, string> {
+    const errors: Map<string, string> = new Map();
+    if (!input.name || input.name.length < 3) {
+      errors.set("name", this.translator.translate("inputNameRequiredError", { length: "3" }));
+    }
+    if (!input.email || !EMAIL_REGEX.test(input.email)) {
+      errors.set("email", this.translator.translate("inputEmailRequiredError"));
+    }
+    if (!input.password || input.password.length < 8) {
+      errors.set(
+        "password",
+        this.translator.translate("inputPasswordRequiredError", {
+          length: "8",
+        }),
+      );
+    }
+    if (!input.country || input.country.length !== 2) {
+      errors.set("country", this.translator.translate("inputCountryRequiredError"));
+    }
+
+    return errors;
+  }
+
+  private validateUpdateUserInput(input: UpdateUserInput): Map<string, string> {
+    const errors: Map<string, string> = new Map();
+    if (!input.id) {
+      errors.set("id", this.translator.translate("inputIdError"));
+    }
+
+    if (input.name && input.name.length < 3) {
+      errors.set("name", this.translator.translate("inputNameRequiredError", { length: "3" }));
+    }
+
+    if (input.email && !EMAIL_REGEX.test(input.email)) {
+      errors.set("email", this.translator.translate("inputEmailRequiredError"));
+    }
+
+    if (input.password && input.password.length < 8) {
+      errors.set(
+        "password",
+        this.translator.translate("inputPasswordRequiredError", { length: "8" }),
+      );
+    }
+
+    if (input.country && input.country.length !== 2) {
+      errors.set("country", this.translator.translate("inputCountryRequiredError"));
+    }
+
+    return errors;
+  }
+
+  private validateLoginInput(email: string, password: string): Map<string, string> {
+    const errors: Map<string, string> = new Map();
+    if (!email || !EMAIL_REGEX.test(email)) {
+      errors.set("email", this.translator.translate("inputEmailRequiredError"));
+    }
+    if (!password || password.length < 8) {
+      errors.set(
+        "password",
+        this.translator.translate("inputPasswordRequiredError", { length: "8" }),
+      );
+    }
+
+    return errors;
   }
 }

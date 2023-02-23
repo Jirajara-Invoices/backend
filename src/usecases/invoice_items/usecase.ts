@@ -1,9 +1,8 @@
 import { User } from "../../entities/models/users";
-import { InvoiceItem } from "../../entities/models/invoice_items";
+import { InvoiceItem, InvoiceItemType } from "../../entities/models/invoice_items";
 import { ValidationError } from "../../entities/errors";
 import { BaseUseCase } from "../common/base";
 import { LoggerUseCasePort, TranslationUseCasePort } from "../common/interfaces";
-import { validateFiltersInput } from "../common/validators";
 import {
   CreateItemInput,
   InvoiceItemRepositoryPort,
@@ -11,7 +10,6 @@ import {
   ItemsFilterInput,
   UpdateItemInput,
 } from "./interfaces";
-import { validateCreateItemInput, validateUpdateItemInput } from "./validators";
 
 export class InvoiceItemUseCase extends BaseUseCase implements InvoiceItemUseCasePort {
   constructor(
@@ -24,7 +22,7 @@ export class InvoiceItemUseCase extends BaseUseCase implements InvoiceItemUseCas
   }
 
   async create(input: CreateItemInput): Promise<InvoiceItem> {
-    const errors = validateCreateItemInput(input);
+    const errors = this.validateCreateItemInput(input);
     if (errors.size > 0) {
       throw new ValidationError(this.translator.translate("validationError"), errors);
     }
@@ -32,7 +30,7 @@ export class InvoiceItemUseCase extends BaseUseCase implements InvoiceItemUseCas
   }
 
   async update(input: UpdateItemInput): Promise<InvoiceItem> {
-    const errors = validateUpdateItemInput(input);
+    const errors = this.validateUpdateItemInput(input);
     if (errors.size > 0) {
       throw new ValidationError(this.translator.translate("validationError"), errors);
     }
@@ -52,11 +50,60 @@ export class InvoiceItemUseCase extends BaseUseCase implements InvoiceItemUseCas
 
   async findAll(filter: ItemsFilterInput): Promise<InvoiceItem[]> {
     const currentUserId = this.isCurrentUserAdmin() ? null : this.getCurrentUserId();
-    const errors = validateFiltersInput(filter);
+    const errors = this.validateFiltersInput(filter);
     if (errors.size > 0) {
       throw new ValidationError(this.translator.translate("filtersError"), errors);
     }
 
     return await this.repository.findAll(filter, currentUserId);
+  }
+
+  private validateCreateItemInput(input: CreateItemInput): Map<string, string> {
+    const errors: Map<string, string> = new Map();
+    if (!input.invoice_id) {
+      errors.set("invoice_id", this.translator.translate("inputInvoiceItemInvoiceIdError"));
+    }
+    if (!input.type || !(Object.values(InvoiceItemType) as string[]).includes(input.type)) {
+      errors.set("type", this.translator.translate("inputInvoiceItemTypeError"));
+    }
+    if (!input.name) {
+      errors.set("name", this.translator.translate("inputNameRequiredError", { length: "3" }));
+    }
+    if (Number.isNaN(input.price)) {
+      errors.set("price", this.translator.translate("inputInvoiceItemPriceError"));
+    }
+    if (!input.quantity || input.quantity <= 0) {
+      errors.set("quantity", this.translator.translate("inputInvoiceItemQuantityError"));
+    }
+
+    if (
+      (input.type === InvoiceItemType.Tax || input.type === InvoiceItemType.Discount) &&
+      input.quantity !== 1
+    ) {
+      errors.set("quantity", this.translator.translate("inputInvoiceItemSpecialQuantityError"));
+    }
+
+    return errors;
+  }
+
+  private validateUpdateItemInput(input: UpdateItemInput): Map<string, string> {
+    const errors: Map<string, string> = new Map();
+    if (!input.id) {
+      errors.set("id", this.translator.translate("inputIdError"));
+    }
+
+    if (input.type && !(Object.values(InvoiceItemType) as string[]).includes(input.type)) {
+      errors.set("type", this.translator.translate("inputInvoiceItemTypeError"));
+    }
+
+    if (input.price && Number.isNaN(input.price)) {
+      errors.set("price", this.translator.translate("inputInvoiceItemPriceError"));
+    }
+
+    if (input.quantity && input.quantity <= 0) {
+      errors.set("quantity", this.translator.translate("inputInvoiceItemQuantityError"));
+    }
+
+    return errors;
   }
 }

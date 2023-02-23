@@ -1,5 +1,6 @@
 *.json
-*.json5
+!/src/*.json
+!/locales/*.json
 *.yml
 *.md
 
