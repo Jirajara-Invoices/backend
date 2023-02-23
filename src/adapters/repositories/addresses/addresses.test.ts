@@ -5,12 +5,20 @@ import { makePool } from "../../../utilities/mock";
 import { AddressRepository } from "./addresses";
 import { AddressFilterInput, CreateAddressInput } from "../../../usecases/addresses/interfaces";
 import { UpdateUserInput } from "../../../usecases/users/interfaces";
+import { TranslationUseCasePort } from "../../../usecases/common/interfaces";
+import { It, Mock } from "moq.ts";
 
 describe("AddressesRepository", () => {
   let address: Address;
   let addressResult: QueryResultRow[];
+  let translator: TranslationUseCasePort;
 
   beforeEach(() => {
+    translator = new Mock<TranslationUseCasePort>()
+      .setup((x) => x.translate(It.IsAny(), It.IsAny()))
+      .returns("translated")
+      .object();
+
     address = {
       id: "1",
       user_id: "1",
@@ -55,7 +63,7 @@ describe("AddressesRepository", () => {
   describe("findByID", () => {
     it("should return an address", async () => {
       const dbPool = makePool(addressResult);
-      const repo = new AddressRepository(dbPool);
+      const repo = new AddressRepository(dbPool, translator);
       const dbAddress = await repo.findByID(address.id);
 
       expect(dbAddress).toEqual(address);
@@ -63,7 +71,7 @@ describe("AddressesRepository", () => {
 
     it("should raise NotFoundError", async () => {
       const dbPool = makePool([]);
-      const repo = new AddressRepository(dbPool);
+      const repo = new AddressRepository(dbPool, translator);
 
       await expect(repo.findByID(address.id)).rejects.toThrowError(Error);
     });
@@ -72,7 +80,7 @@ describe("AddressesRepository", () => {
   describe("find", () => {
     it("should return a list of addresses", async () => {
       const dbPool = makePool(addressResult);
-      const repo = new AddressRepository(dbPool);
+      const repo = new AddressRepository(dbPool, translator);
       const filter: AddressFilterInput = {
         limit: 10,
         direction: "ASC",
@@ -84,7 +92,7 @@ describe("AddressesRepository", () => {
 
     it("should return an empty list", async () => {
       const dbPool = makePool([]);
-      const repo = new AddressRepository(dbPool);
+      const repo = new AddressRepository(dbPool, translator);
 
       const filter: AddressFilterInput = {
         limit: 10,
@@ -99,7 +107,7 @@ describe("AddressesRepository", () => {
   describe("save", () => {
     it("should save an address", async () => {
       const dbPool = makePool(addressResult);
-      const repo = new AddressRepository(dbPool);
+      const repo = new AddressRepository(dbPool, translator);
       const input: CreateAddressInput = {
         type: address.type,
         name: address.name,
@@ -128,7 +136,7 @@ describe("AddressesRepository", () => {
       };
       addressResult[0].name = input.name!;
       const dbPool = makePool(addressResult);
-      const repo = new AddressRepository(dbPool);
+      const repo = new AddressRepository(dbPool, translator);
       const dbAddress = await repo.update(input, address.user_id);
 
       expect(dbAddress).toEqual(address);
@@ -138,7 +146,7 @@ describe("AddressesRepository", () => {
   describe("delete", () => {
     it("should delete an address", async () => {
       const dbPool = makePool(addressResult);
-      const repo = new AddressRepository(dbPool);
+      const repo = new AddressRepository(dbPool, translator);
       const dbAddress = await repo.delete(address.id, address.user_id);
 
       expect(dbAddress).toBeUndefined();

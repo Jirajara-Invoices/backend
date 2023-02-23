@@ -5,11 +5,19 @@ import { UnauthorizedError, UnknownError } from "../../../entities/errors";
 import { makePool } from "../../../utilities/mock";
 import { UserRepository } from "./users";
 import { CreateUserInput } from "../../../usecases/users/interfaces";
+import { TranslationUseCasePort } from "../../../usecases/common/interfaces";
+import { It, Mock } from "moq.ts";
 
 describe("UsersRepository tests", () => {
+  let translator: TranslationUseCasePort;
   let user: User;
 
   beforeEach(() => {
+    translator = new Mock<TranslationUseCasePort>()
+      .setup((x) => x.translate(It.IsAny(), It.IsAny()))
+      .returns("translated")
+      .object();
+
     user = {
       id: "1",
       name: "John Doe",
@@ -36,7 +44,7 @@ describe("UsersRepository tests", () => {
         },
       ]);
 
-      const userRepository = new UserRepository(pool);
+      const userRepository = new UserRepository(pool, translator);
       const result = await userRepository.findByID(user.id);
 
       expect(result).toEqual(user);
@@ -44,7 +52,7 @@ describe("UsersRepository tests", () => {
 
     it("should raise NotFoundError", async () => {
       const pool = makePool([]);
-      const userRepository = new UserRepository(pool);
+      const userRepository = new UserRepository(pool, translator);
 
       await expect(userRepository.findByID("1")).rejects.toThrowError(Error);
     });
@@ -65,7 +73,7 @@ describe("UsersRepository tests", () => {
         },
       ]);
 
-      const userRepository = new UserRepository(pool);
+      const userRepository = new UserRepository(pool, translator);
       const result = await userRepository.find({
         email: "exam",
         limit: 10,
@@ -79,7 +87,7 @@ describe("UsersRepository tests", () => {
 
     it("should return an empty list", async () => {
       const pool = makePool([]);
-      const userRepository = new UserRepository(pool);
+      const userRepository = new UserRepository(pool, translator);
 
       const result = await userRepository.find({
         email: "exam",
@@ -113,7 +121,7 @@ describe("UsersRepository tests", () => {
         },
       ]);
 
-      const userRepository = new UserRepository(pool);
+      const userRepository = new UserRepository(pool, translator);
       const result = await userRepository.checkCredentials(user.email, "password");
 
       expect(result).toEqual(user);
@@ -121,7 +129,7 @@ describe("UsersRepository tests", () => {
 
     it("should raise Error", async () => {
       const pool = makePool([]);
-      const userRepository = new UserRepository(pool);
+      const userRepository = new UserRepository(pool, translator);
 
       await expect(userRepository.checkCredentials("", "")).rejects.toThrowError(Error);
     });
@@ -140,7 +148,7 @@ describe("UsersRepository tests", () => {
           deleted_at: null,
         },
       ]);
-      const userRepository = new UserRepository(pool);
+      const userRepository = new UserRepository(pool, translator);
 
       await expect(userRepository.checkCredentials(user.email, "password2")).rejects.toThrowError(
         UnauthorizedError,
@@ -163,7 +171,7 @@ describe("UsersRepository tests", () => {
         },
       ]);
 
-      const userRepository = new UserRepository(pool);
+      const userRepository = new UserRepository(pool, translator);
       const input: CreateUserInput = {
         name: user.name,
         email: user.email,
@@ -191,7 +199,7 @@ describe("UsersRepository tests", () => {
         },
       ]);
 
-      const userRepository = new UserRepository(pool);
+      const userRepository = new UserRepository(pool, translator);
       const result = await userRepository.update({
         id: user.id,
         name: "John Doe",
@@ -202,7 +210,7 @@ describe("UsersRepository tests", () => {
 
     it("should raise NotFoundError", async () => {
       const pool = makePool([]);
-      const userRepository = new UserRepository(pool);
+      const userRepository = new UserRepository(pool, translator);
 
       await expect(userRepository.update({ id: "1", name: "John Doe" })).rejects.toThrowError(
         UnknownError,
@@ -214,7 +222,7 @@ describe("UsersRepository tests", () => {
     it("should delete a user", async () => {
       const pool = makePool([]);
 
-      const userRepository = new UserRepository(pool);
+      const userRepository = new UserRepository(pool, translator);
 
       await expect(userRepository.delete(user.id)).resolves.toBeUndefined();
     });

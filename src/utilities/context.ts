@@ -2,18 +2,18 @@ import Redis from "ioredis";
 import { ContextFunction } from "@apollo/server/src/externalTypes";
 import { ExpressContextFunctionArgument } from "@apollo/server/src/express4";
 import { Session, SessionData } from "express-session";
-
 import { DatabasePool } from "slonik";
+
 import { UserUseCasePort } from "../usecases/users/interfaces";
 import { UserUseCase } from "../usecases/users/usecase";
 import { UserRepository } from "../adapters/repositories/users/users";
 import { User, UserRole } from "../entities/models/users";
+import { TranslatorAdapter } from "../adapters/common/i18n";
 import { LoggerAdapter } from "../adapters/common/logger";
-import { LoggerUseCasePort } from "../usecases/common/interfaces";
+import { LoggerUseCasePort, TranslationUseCasePort } from "../usecases/common/interfaces";
 import { AddressUseCasePort } from "../usecases/addresses/interfaces";
 import { AddressUseCase } from "../usecases/addresses/usecase";
 import { AddressRepository } from "../adapters/repositories/addresses/addresses";
-import { logger } from "./winston";
 import { TaxesUseCasePort } from "../usecases/taxes/interfaces";
 import { TaxRepository } from "../adapters/repositories/taxes/taxes";
 import { TaxUseCase } from "../usecases/taxes/usecase";
@@ -23,6 +23,7 @@ import { InvoiceUseCase } from "../usecases/invoices/usecase";
 import { InvoiceItemRepository } from "../adapters/repositories/invoice_items/invoice_items";
 import { InvoiceItemUseCase } from "../usecases/invoice_items/usecase";
 import { InvoiceItemUseCasePort } from "../usecases/invoice_items/interfaces";
+import { logger } from "./winston";
 
 export type SessionContext = Session & Partial<SessionData>;
 
@@ -42,50 +43,58 @@ export interface GraphQLContext {
   };
 }
 
-function instantiateUserUseCase(dbPool: DatabasePool, logger: LoggerUseCasePort): UserUseCasePort {
-  const userRepository = new UserRepository(dbPool);
+function instantiateUserUseCase(
+  dbPool: DatabasePool,
+  logger: LoggerUseCasePort,
+  translator: TranslationUseCasePort,
+): UserUseCasePort {
+  const userRepository = new UserRepository(dbPool, translator);
 
-  return new UserUseCase(userRepository, logger);
+  return new UserUseCase(userRepository, logger, translator);
 }
 
 function instantiateAddressUseCase(
   dbPool: DatabasePool,
   logger: LoggerUseCasePort,
+  translator: TranslationUseCasePort,
   currentUser: User | null,
 ): AddressUseCasePort {
-  const addressRepository = new AddressRepository(dbPool);
+  const addressRepository = new AddressRepository(dbPool, translator);
 
-  return new AddressUseCase(addressRepository, logger, currentUser);
+  return new AddressUseCase(addressRepository, logger, translator, currentUser);
 }
 
 function instantiateTaxUseCase(
   dbPool: DatabasePool,
   logger: LoggerUseCasePort,
+  translator: TranslationUseCasePort,
   currentUser: User | null,
 ): TaxesUseCasePort {
-  const taxRepository = new TaxRepository(dbPool);
+  const taxRepository = new TaxRepository(dbPool, translator);
 
-  return new TaxUseCase(taxRepository, logger, currentUser);
+  return new TaxUseCase(taxRepository, logger, translator, currentUser);
 }
 
 function instantiateInvoiceUseCase(
   dbPool: DatabasePool,
   logger: LoggerUseCasePort,
+  translator: TranslationUseCasePort,
   currentUser: User | null,
 ): InvoiceUseCasePort {
-  const invoiceRepository = new InvoiceRepository(dbPool);
+  const invoiceRepository = new InvoiceRepository(dbPool, translator);
 
-  return new InvoiceUseCase(invoiceRepository, logger, currentUser);
+  return new InvoiceUseCase(invoiceRepository, logger, translator, currentUser);
 }
 
 function instantiateInvoiceItemsUseCase(
   dbPool: DatabasePool,
   logger: LoggerUseCasePort,
+  translator: TranslationUseCasePort,
   currentUser: User | null,
 ): InvoiceItemUseCasePort {
   const invoiceItemsRepository = new InvoiceItemRepository(dbPool);
 
-  return new InvoiceItemUseCase(invoiceItemsRepository, logger, currentUser);
+  return new InvoiceItemUseCase(invoiceItemsRepository, logger, translator, currentUser);
 }
 
 export async function getAuthUser(
@@ -149,8 +158,9 @@ export const createContextFactory = (
 ): ContextFunction<[ExpressContextFunctionArgument], GraphQLContext> => {
   return async ({ req }) => {
     const log = new LoggerAdapter(logger.child({ session: req.session.id }));
+    const translator = new TranslatorAdapter(req.i18n.t);
 
-    const userUseCase = instantiateUserUseCase(dbPool, log);
+    const userUseCase = instantiateUserUseCase(dbPool, log, translator);
     const redisClient = redis ?? new Redis();
 
     const user = await getAuthUser(req.session, userUseCase, redisClient, log);
@@ -161,10 +171,10 @@ export const createContextFactory = (
       redis: redisClient,
       useCases: {
         users: userUseCase,
-        addresses: instantiateAddressUseCase(dbPool, log, user),
-        taxes: instantiateTaxUseCase(dbPool, log, user),
-        invoices: instantiateInvoiceUseCase(dbPool, log, user),
-        invoiceItems: instantiateInvoiceItemsUseCase(dbPool, log, user),
+        addresses: instantiateAddressUseCase(dbPool, log, translator, user),
+        taxes: instantiateTaxUseCase(dbPool, log, translator, user),
+        invoices: instantiateInvoiceUseCase(dbPool, log, translator, user),
+        invoiceItems: instantiateInvoiceItemsUseCase(dbPool, log, translator, user),
       },
       req,
       auth: {

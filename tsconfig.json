@@ -9,6 +9,7 @@
     "module": "esnext",
     "moduleResolution": "node",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "strict": true,
     "types": ["node", "jest"],
     "typeRoots": ["./src/typings", "./node_modules/@types"],

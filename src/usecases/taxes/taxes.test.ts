@@ -1,7 +1,7 @@
 import { IMock, It, Mock } from "moq.ts";
 import { User, UserRole } from "../../entities/models/users";
 import { Tax, TaxCalcType } from "../../entities/models/taxes";
-import { LoggerUseCasePort } from "../common/interfaces";
+import { LoggerUseCasePort, TranslationUseCasePort } from "../common/interfaces";
 import {
   CreateTaxInput,
   TaxesFilterInput,
@@ -15,6 +15,7 @@ describe("taxes test suites", () => {
   let taxesRepository: IMock<TaxesRepositoryPort>;
   let currentUser: User;
   let logger: LoggerUseCasePort;
+  let translator: TranslationUseCasePort;
   let tax: Tax;
 
   beforeEach(() => {
@@ -22,6 +23,10 @@ describe("taxes test suites", () => {
     logger = new Mock<LoggerUseCasePort>()
       .setup((x) => x.error(It.IsAny()))
       .returns()
+      .object();
+    translator = new Mock<TranslationUseCasePort>()
+      .setup((x) => x.translate(It.IsAny(), It.IsAny()))
+      .returns("translated")
       .object();
 
     currentUser = {
@@ -48,7 +53,12 @@ describe("taxes test suites", () => {
   describe("create tax", () => {
     it("should create a tax", async () => {
       taxesRepository.setup((x) => x.create).returns(() => Promise.resolve(tax));
-      const taxesUseCase = new TaxUseCase(taxesRepository.object(), logger, currentUser);
+      const taxesUseCase = new TaxUseCase(
+        taxesRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       const input: CreateTaxInput = {
         name: "name",
@@ -62,7 +72,12 @@ describe("taxes test suites", () => {
     });
 
     it("should throw an error if the name is not provided", async () => {
-      const taxesUseCase = new TaxUseCase(taxesRepository.object(), logger, currentUser);
+      const taxesUseCase = new TaxUseCase(
+        taxesRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: CreateTaxInput = {
         name: "",
         rate: 1,
@@ -73,7 +88,12 @@ describe("taxes test suites", () => {
     });
 
     it("should throw an error if the rate is not provided", async () => {
-      const taxesUseCase = new TaxUseCase(taxesRepository.object(), logger, currentUser);
+      const taxesUseCase = new TaxUseCase(
+        taxesRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: CreateTaxInput = {
         name: "name",
         rate: 0,
@@ -92,7 +112,12 @@ describe("taxes test suites", () => {
         .returns(() => Promise.resolve(tax))
         .setup((x) => x.findByID)
         .returns(() => Promise.resolve(tax));
-      const taxesUseCase = new TaxUseCase(taxesRepository.object(), logger, currentUser);
+      const taxesUseCase = new TaxUseCase(
+        taxesRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       const input: UpdateTaxInput = {
         id: tax.id,
@@ -111,7 +136,12 @@ describe("taxes test suites", () => {
         .returns(() => Promise.resolve(tax))
         .setup((x) => x.findByID)
         .returns(() => Promise.resolve(tax));
-      const taxesUseCase = new TaxUseCase(taxesRepository.object(), logger, currentUser);
+      const taxesUseCase = new TaxUseCase(
+        taxesRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       currentUser.id = "2";
 
       const input: UpdateTaxInput = {
@@ -130,7 +160,12 @@ describe("taxes test suites", () => {
         .returns(() => Promise.resolve())
         .setup((x) => x.findByID)
         .returns(() => Promise.resolve(tax));
-      const taxesUseCase = new TaxUseCase(taxesRepository.object(), logger, currentUser);
+      const taxesUseCase = new TaxUseCase(
+        taxesRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(taxesUseCase.delete(tax.id)).resolves.toBeUndefined();
     });
@@ -141,7 +176,12 @@ describe("taxes test suites", () => {
         .returns(() => Promise.resolve())
         .setup((x) => x.findByID)
         .returns(() => Promise.resolve(tax));
-      const taxesUseCase = new TaxUseCase(taxesRepository.object(), logger, currentUser);
+      const taxesUseCase = new TaxUseCase(
+        taxesRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       currentUser.id = "2";
 
       await expect(taxesUseCase.delete(tax.id)).rejects.toThrowError(ValidationError);
@@ -151,7 +191,12 @@ describe("taxes test suites", () => {
   describe("get tax by id", () => {
     it("should get a tax by id", async () => {
       taxesRepository.setup((x) => x.findByID).returns(() => Promise.resolve(tax));
-      const taxesUseCase = new TaxUseCase(taxesRepository.object(), logger, currentUser);
+      const taxesUseCase = new TaxUseCase(
+        taxesRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       const result = await taxesUseCase.findByID(tax.id);
 
@@ -160,7 +205,12 @@ describe("taxes test suites", () => {
 
     it("should throw an error if the tax does belong to the user", async () => {
       taxesRepository.setup((x) => x.findByID).returns(() => Promise.resolve(tax));
-      const taxesUseCase = new TaxUseCase(taxesRepository.object(), logger, currentUser);
+      const taxesUseCase = new TaxUseCase(
+        taxesRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       currentUser.id = "2";
 
       await expect(taxesUseCase.findByID(tax.id)).rejects.toThrowError(ValidationError);
@@ -170,7 +220,12 @@ describe("taxes test suites", () => {
   describe("get taxes", () => {
     it("should get taxes", async () => {
       taxesRepository.setup((x) => x.findAll).returns(() => Promise.resolve([tax]));
-      const taxesUseCase = new TaxUseCase(taxesRepository.object(), logger, currentUser);
+      const taxesUseCase = new TaxUseCase(
+        taxesRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const filters: TaxesFilterInput = {
         direction: "ASC",
         limit: 10,
@@ -183,7 +238,12 @@ describe("taxes test suites", () => {
 
     it("should throw an error if the tax does belong to the user", async () => {
       taxesRepository.setup((x) => x.findAll).returns(() => Promise.resolve([tax]));
-      const taxesUseCase = new TaxUseCase(taxesRepository.object(), logger, currentUser);
+      const taxesUseCase = new TaxUseCase(
+        taxesRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const filters: TaxesFilterInput = {
         userId: "2",
         direction: "ASC",

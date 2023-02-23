@@ -2,7 +2,7 @@ import { IMock, It, Mock } from "moq.ts";
 import { ValidationError } from "../../entities/errors";
 import { User, UserRole } from "../../entities/models/users";
 import { InvoiceItem, InvoiceItemType } from "../../entities/models/invoice_items";
-import { LoggerUseCasePort } from "../common/interfaces";
+import { LoggerUseCasePort, TranslationUseCasePort } from "../common/interfaces";
 import {
   CreateItemInput,
   InvoiceItemRepositoryPort,
@@ -15,6 +15,7 @@ describe("invoice items test suites", () => {
   let invoiceItemsRepository: IMock<InvoiceItemRepositoryPort>;
   let currentUser: User;
   let logger: LoggerUseCasePort;
+  let translator: TranslationUseCasePort;
   let invoiceItem: InvoiceItem;
 
   beforeEach(() => {
@@ -22,6 +23,10 @@ describe("invoice items test suites", () => {
     logger = new Mock<LoggerUseCasePort>()
       .setup((x) => x.error(It.IsAny()))
       .returns()
+      .object();
+    translator = new Mock<TranslationUseCasePort>()
+      .setup((x) => x.translate(It.IsAny(), It.IsAny()))
+      .returns("translated")
       .object();
 
     currentUser = {
@@ -54,6 +59,7 @@ describe("invoice items test suites", () => {
       const invoiceItemsUseCase = new InvoiceItemUseCase(
         invoiceItemsRepository.object(),
         logger,
+        translator,
         currentUser,
       );
 
@@ -76,6 +82,7 @@ describe("invoice items test suites", () => {
       const invoiceItemsUseCase = new InvoiceItemUseCase(
         invoiceItemsRepository.object(),
         logger,
+        translator,
         currentUser,
       );
       const input: CreateItemInput = {
@@ -95,6 +102,7 @@ describe("invoice items test suites", () => {
       const invoiceItemsUseCase = new InvoiceItemUseCase(
         invoiceItemsRepository.object(),
         logger,
+        translator,
         currentUser,
       );
       const input: CreateItemInput = {
@@ -117,6 +125,7 @@ describe("invoice items test suites", () => {
       const invoiceItemsUseCase = new InvoiceItemUseCase(
         invoiceItemsRepository.object(),
         logger,
+        translator,
         currentUser,
       );
 
@@ -139,6 +148,7 @@ describe("invoice items test suites", () => {
       const invoiceItemsUseCase = new InvoiceItemUseCase(
         invoiceItemsRepository.object(),
         logger,
+        translator,
         currentUser,
       );
       const input: UpdateItemInput = {
@@ -156,6 +166,7 @@ describe("invoice items test suites", () => {
       const invoiceItemsUseCase = new InvoiceItemUseCase(
         invoiceItemsRepository.object(),
         logger,
+        translator,
         currentUser,
       );
 
@@ -169,6 +180,7 @@ describe("invoice items test suites", () => {
       const invoiceItemsUseCase = new InvoiceItemUseCase(
         invoiceItemsRepository.object(),
         logger,
+        translator,
         currentUser,
       );
 
@@ -184,6 +196,7 @@ describe("invoice items test suites", () => {
       const invoiceItemsUseCase = new InvoiceItemUseCase(
         invoiceItemsRepository.object(),
         logger,
+        translator,
         currentUser,
       );
       const filters: ItemsFilterInput = {

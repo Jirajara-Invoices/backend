@@ -4,6 +4,7 @@ import { It, Mock } from "moq.ts";
 import { createContextFactory, SessionContext } from "./context";
 import { makePool } from "./mock";
 import Redis from "ioredis";
+import * as i18next from "i18next";
 
 describe("context", () => {
   it("should be able to create a context", async () => {
@@ -13,11 +14,17 @@ describe("context", () => {
       .returns("user-id")
       .object();
     const sessionStore = new Mock<Express.SessionStore>().object();
+    const i18n = new Mock<i18next.i18n>().object();
+    const t = new Mock<i18next.TFunction>().object();
     const req = new Mock<Request>()
       .setup((instance) => instance.session)
       .returns(session)
       .setup((instance) => instance.sessionStore)
       .returns(sessionStore)
+      .setup((instance) => instance.i18n)
+      .returns(i18n)
+      .setup((instance) => instance.t)
+      .returns(t)
       .object();
     const res = new Mock<Response>()
       .setup((instance) => instance)

@@ -2,8 +2,7 @@ import { User } from "../../entities/models/users";
 import { Invoice } from "../../entities/models/invoice";
 import { ValidationError } from "../../entities/errors";
 import { BaseUseCase } from "../common/base";
-import { LoggerUseCasePort } from "../common/interfaces";
-import { validateFiltersInput } from "../common/validators";
+import { LoggerUseCasePort, TranslationUseCasePort } from "../common/interfaces";
 import {
   CreateInvoiceInput,
   InvoiceFilterInput,
@@ -12,7 +11,6 @@ import {
   UpdateInvoiceInput,
 } from "./interfaces";
 import { validateCreateInvoiceInput, validateUpdateInvoiceInput } from "./validators";
-import { mapToString } from "../../utilities/arrays";
 import { Tax } from "../../entities/models/taxes";
 import { InvoiceItem } from "../../entities/models/invoice_items";
 
@@ -20,16 +18,16 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   constructor(
     private readonly repository: InvoiceRepositoryPort,
     private readonly logger: LoggerUseCasePort,
+    translator: TranslationUseCasePort,
     currentUser: User | null,
   ) {
-    super(currentUser);
+    super(translator, currentUser);
   }
 
   async create(input: CreateInvoiceInput): Promise<Invoice> {
     const errors = validateCreateInvoiceInput(input);
     if (errors.size > 0) {
-      this.logger.error(`Invalid input for invoice creation: ${mapToString(errors)}`);
-      throw new ValidationError("Invalid input for invoice creation", errors);
+      throw new ValidationError(this.translator.translate("validationError"), errors);
     }
 
     return await this.repository.create(input, this.getCurrentUserId());
@@ -37,14 +35,12 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async update(input: UpdateInvoiceInput): Promise<Invoice> {
     const invoice = await this.repository.findByID(input.id);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to update this invoice`);
-      throw new ValidationError("User is not authorized to update this invoice", new Map());
+      throw new ValidationError(this.translator.translate("updatePermissionsError"), new Map());
     }
 
     const errors = validateUpdateInvoiceInput(invoice, input);
     if (errors.size > 0) {
-      this.logger.error(`Invalid input for update invoice: ${mapToString(errors)}`);
-      throw new ValidationError("Invalid input for update invoice", errors);
+      throw new ValidationError(this.translator.translate("validationError"), errors);
     }
 
     return await this.repository.update(input, this.getCurrentUserId());
@@ -52,8 +48,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async delete(id: string): Promise<void> {
     const invoice = await this.repository.findByID(id);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to update this invoice`);
-      throw new ValidationError("User is not authorized to update this invoice", new Map());
+      throw new ValidationError(this.translator.translate("deleteError"), new Map());
     }
 
     return await this.repository.delete(id);
@@ -61,25 +56,13 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async findByID(id: string): Promise<Invoice> {
     const invoice = await this.repository.findByID(id);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to see this invoice`);
-      throw new ValidationError("User is not authorized to see this invoice", new Map());
+      throw new ValidationError(this.translator.translate("viewError"), new Map());
     }
 
     return invoice;
   }
   async findAll(filter: InvoiceFilterInput): Promise<Invoice[]> {
-    const errors = validateFiltersInput(filter);
-    if (errors.size > 0) {
-      this.logger.error(`Invalid input for invoice filters: ${mapToString(errors)}`);
-      throw new ValidationError("Invalid input for invoice filters", errors);
-    }
-
-    if (filter.userId && !this.isCurrentUserAuthorized(filter.userId)) {
-      this.logger.error(`User is not authorized to get invoices for this user`);
-      throw new ValidationError("User is not authorized to get invoices for this user", new Map());
-    } else {
-      filter.userId = this.getCurrentUserId();
-    }
+    this.validateFilterInputWithUser(filter);
 
     return await this.repository.findAll(filter);
   }
@@ -87,8 +70,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async getDiscount(invoiceId: string): Promise<number> {
     const invoice = await this.repository.findByID(invoiceId);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to see this invoice`);
-      throw new ValidationError("User is not authorized to see this invoice", new Map());
+      throw new ValidationError(this.translator.translate("viewError"), new Map());
     }
 
     return this.repository.getDiscount(invoiceId);
@@ -97,8 +79,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async getInvoiceTaxes(invoiceId: string): Promise<Tax[]> {
     const invoice = await this.repository.findByID(invoiceId);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to see this invoice`);
-      throw new ValidationError("User is not authorized to see this invoice", new Map());
+      throw new ValidationError(this.translator.translate("viewError"), new Map());
     }
 
     return this.repository.getInvoiceTaxes(invoiceId);
@@ -107,8 +88,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async getNonTaxableAmount(invoiceId: string): Promise<number> {
     const invoice = await this.repository.findByID(invoiceId);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to see this invoice`);
-      throw new ValidationError("User is not authorized to see this invoice", new Map());
+      throw new ValidationError(this.translator.translate("viewError"), new Map());
     }
 
     return this.repository.getNonTaxableAmount(invoiceId);
@@ -117,8 +97,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async getSubtotal(invoiceId: string): Promise<number> {
     const invoice = await this.repository.findByID(invoiceId);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to see this invoice`);
-      throw new ValidationError("User is not authorized to see this invoice", new Map());
+      throw new ValidationError(this.translator.translate("viewError"), new Map());
     }
 
     return this.repository.getSubtotal(invoiceId);
@@ -127,8 +106,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async getTaxAmount(invoiceId: string): Promise<number> {
     const invoice = await this.repository.findByID(invoiceId);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to see this invoice`);
-      throw new ValidationError("User is not authorized to see this invoice", new Map());
+      throw new ValidationError(this.translator.translate("viewError"), new Map());
     }
 
     return this.repository.getTaxAmount(invoiceId);
@@ -137,8 +115,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async getTaxableAmount(invoiceId: string): Promise<number> {
     const invoice = await this.repository.findByID(invoiceId);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to see this invoice`);
-      throw new ValidationError("User is not authorized to see this invoice", new Map());
+      throw new ValidationError(this.translator.translate("viewError"), new Map());
     }
 
     return this.repository.getTaxableAmount(invoiceId);
@@ -147,8 +124,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async getTotal(invoiceId: string): Promise<number> {
     const invoice = await this.repository.findByID(invoiceId);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to see this invoice`);
-      throw new ValidationError("User is not authorized to see this invoice", new Map());
+      throw new ValidationError(this.translator.translate("viewError"), new Map());
     }
 
     return this.repository.getTotal(invoiceId);
@@ -157,8 +133,7 @@ export class InvoiceUseCase extends BaseUseCase implements InvoiceUseCasePort {
   async getInvoiceItems(invoiceId: string): Promise<InvoiceItem[]> {
     const invoice = await this.repository.findByID(invoiceId);
     if (!this.isCurrentUserAuthorized(invoice.user_id)) {
-      this.logger.error(`User is not authorized to see this invoice`);
-      throw new ValidationError("User is not authorized to see this invoice", new Map());
+      throw new ValidationError(this.translator.translate("viewError"), new Map());
     }
 
     return this.repository.getInvoiceItems(invoiceId);

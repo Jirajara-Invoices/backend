@@ -2,7 +2,7 @@ import { IMock, It, Mock } from "moq.ts";
 
 import { User, UserRole } from "../../entities/models/users";
 import { Address, AddressType } from "../../entities/models/addresses";
-import { LoggerUseCasePort } from "../common/interfaces";
+import { LoggerUseCasePort, TranslationUseCasePort } from "../common/interfaces";
 import {
   AddressFilterInput,
   AddressRepositoryPort,
@@ -17,6 +17,7 @@ describe("Addresses tests suites", () => {
   let currentUser: User;
   let address: Address;
   let logger: LoggerUseCasePort;
+  let translator: TranslationUseCasePort;
 
   beforeEach(() => {
     addressRepository = new Mock<AddressRepositoryPort>();
@@ -41,6 +42,10 @@ describe("Addresses tests suites", () => {
       .setup((x) => x.error(It.IsAny()))
       .returns()
       .object();
+    translator = new Mock<TranslationUseCasePort>()
+      .setup((x) => x.translate(It.IsAny(), It.IsAny()))
+      .returns("translated")
+      .object();
 
     currentUser = {
       id: "1",
@@ -56,7 +61,12 @@ describe("Addresses tests suites", () => {
   describe("create address", () => {
     it("should create an address", async () => {
       addressRepository.setup((x) => x.create).returns(() => Promise.resolve(address));
-      const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
+      const addressUseCase = new AddressUseCase(
+        addressRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: CreateAddressInput = {
         type: address.type,
         name: address.name,
@@ -77,7 +87,12 @@ describe("Addresses tests suites", () => {
 
     it("should throw an error if the input is invalid", async () => {
       addressRepository.setup((x) => x.create).returns(() => Promise.reject(ValidationError));
-      const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
+      const addressUseCase = new AddressUseCase(
+        addressRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: CreateAddressInput = {
         type: address.type,
         name: "a",
@@ -97,7 +112,12 @@ describe("Addresses tests suites", () => {
         .returns(() => Promise.resolve(address))
         .setup((x) => x.update)
         .returns(() => Promise.resolve(address));
-      const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
+      const addressUseCase = new AddressUseCase(
+        addressRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: UpdateAddressInput = {
         id: address.id,
         type: address.type,
@@ -113,7 +133,12 @@ describe("Addresses tests suites", () => {
         .returns(() => Promise.resolve(address))
         .setup((x) => x.update)
         .returns(() => Promise.reject(ValidationError));
-      const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
+      const addressUseCase = new AddressUseCase(
+        addressRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: UpdateAddressInput = {
         id: address.id,
         name: "a",
@@ -125,7 +150,12 @@ describe("Addresses tests suites", () => {
     it("should throw an error if the address does not belongs to the user", async () => {
       address.user_id = "2";
       addressRepository.setup((x) => x.findByID).returns(() => Promise.resolve(address));
-      const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
+      const addressUseCase = new AddressUseCase(
+        addressRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: UpdateAddressInput = {
         id: address.id,
         name: "address name",
@@ -142,7 +172,12 @@ describe("Addresses tests suites", () => {
         .returns(() => Promise.resolve(address))
         .setup((x) => x.delete)
         .returns(() => Promise.resolve());
-      const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
+      const addressUseCase = new AddressUseCase(
+        addressRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const deletedAddress = await addressUseCase.delete(address.id);
 
       expect(deletedAddress).toBeUndefined();
@@ -151,7 +186,12 @@ describe("Addresses tests suites", () => {
     it("should throw an error if the address does not belongs to the user", async () => {
       address.user_id = "2";
       addressRepository.setup((x) => x.findByID).returns(() => Promise.resolve(address));
-      const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
+      const addressUseCase = new AddressUseCase(
+        addressRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(addressUseCase.delete(address.id)).rejects.toThrowError(ValidationError);
     });
@@ -160,7 +200,12 @@ describe("Addresses tests suites", () => {
   describe("find address by id", () => {
     it("should get an address", async () => {
       addressRepository.setup((x) => x.findByID).returns(() => Promise.resolve(address));
-      const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
+      const addressUseCase = new AddressUseCase(
+        addressRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const foundAddress = await addressUseCase.findByID(address.id);
 
       expect(foundAddress).toEqual(address);
@@ -169,7 +214,12 @@ describe("Addresses tests suites", () => {
     it("should throw an error if the address does not belongs to the user", async () => {
       address.user_id = "2";
       addressRepository.setup((x) => x.findByID).returns(() => Promise.resolve(address));
-      const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
+      const addressUseCase = new AddressUseCase(
+        addressRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(addressUseCase.findByID(address.id)).rejects.toThrowError(ValidationError);
     });
@@ -178,7 +228,12 @@ describe("Addresses tests suites", () => {
   describe("find address by filters", () => {
     it("should find addresses", async () => {
       addressRepository.setup((x) => x.find).returns(() => Promise.resolve([address]));
-      const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
+      const addressUseCase = new AddressUseCase(
+        addressRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const filter: AddressFilterInput = {
         direction: "ASC",
         limit: 1,
@@ -190,7 +245,12 @@ describe("Addresses tests suites", () => {
     });
 
     it("should throw an error if the addresses does not belongs to the user", async () => {
-      const addressUseCase = new AddressUseCase(addressRepository.object(), logger, currentUser);
+      const addressUseCase = new AddressUseCase(
+        addressRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const filter: AddressFilterInput = {
         direction: "ASC",
         limit: 1,

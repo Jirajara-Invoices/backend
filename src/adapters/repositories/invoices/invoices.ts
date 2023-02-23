@@ -11,6 +11,7 @@ import {
 import { Invoice, InvoiceStatus, InvoiceType } from "../../../entities/models/invoice";
 import { Tax, TaxCalcType } from "../../../entities/models/taxes";
 import { InvoiceItem, InvoiceItemType } from "../../../entities/models/invoice_items";
+import { TranslationUseCasePort } from "../../../usecases/common/interfaces";
 
 const invoiceZodSchema = z.object({
   id: z.string(),
@@ -130,7 +131,7 @@ const mapInvoice = (invoice: InvoiceZodSchema): Invoice => ({
 export class InvoiceRepository implements InvoiceRepositoryPort {
   private invoiceLoader: DataLoader<string, Invoice>;
   private simpleCache: Map<string, readonly InvoiceItemAndTax[]> = new Map();
-  constructor(private dbPool: DatabasePool) {
+  constructor(private dbPool: DatabasePool, private readonly translator: TranslationUseCasePort) {
     this.invoiceLoader = new DataLoader(this.batchLoadInvoices);
   }
 
@@ -373,7 +374,7 @@ export class InvoiceRepository implements InvoiceRepositoryPort {
       if (invoice) {
         invoicesMapped.push(mapInvoice(invoice));
       } else {
-        invoicesMapped.push(new Error(`Invoice with id ${id} not found`));
+        invoicesMapped.push(new Error(this.translator.translate("notFoundError")));
       }
     }
 

@@ -1,0 +1,12 @@
+{
+  "authenticationError": "Not authenticated",
+  "authorizationError": "Not authorized",
+  "filtersError": "Invalid input for filters",
+  "validationError": "Invalid input",
+  "updatePermissionsError": "You do not have permission to update this resource",
+  "deleteError": "You do not have permission to delete this resource",
+  "notFoundError": "Resource not found",
+  "viewError": "You do not have permission to view this resource",
+  "viewAllError": "You do not have permission to view these resources",
+  "generatePdfError": "You do not have permissions to generate a PDF for this invoice"
+}

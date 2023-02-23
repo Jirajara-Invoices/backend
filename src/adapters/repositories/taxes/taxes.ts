@@ -9,6 +9,7 @@ import {
   UpdateTaxInput,
 } from "../../../usecases/taxes/interfaces";
 import { Tax, TaxCalcType } from "../../../entities/models/taxes";
+import { TranslationUseCasePort } from "../../../usecases/common/interfaces";
 
 const taxZodSchema = z.object({
   id: z.string(),
@@ -41,7 +42,7 @@ const mapTax = (tax: TaxZodSchema): Tax => {
 export class TaxRepository implements TaxesRepositoryPort {
   private taxLoader: DataLoader<string, Tax>;
 
-  constructor(private dbPool: DatabasePool) {
+  constructor(private dbPool: DatabasePool, private readonly translator: TranslationUseCasePort) {
     this.taxLoader = new DataLoader(async (ids: readonly string[]) => {
       const taxes = await this.dbPool.any(
         sql.type(taxZodSchema)`SELECT * FROM taxes WHERE id IN (${sql.join(
@@ -56,7 +57,7 @@ export class TaxRepository implements TaxesRepositoryPort {
         if (tax) {
           taxesMapped.push(mapTax(tax));
         } else {
-          taxesMapped.push(new Error(`Tax with id ${id} not found`));
+          taxesMapped.push(new Error(this.translator.translate("notFoundError")));
         }
       }
 

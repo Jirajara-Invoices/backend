@@ -1,7 +1,7 @@
 import { IMock, It, Mock } from "moq.ts";
 import { User, UserRole } from "../../entities/models/users";
 import { Invoice, InvoiceStatus, InvoiceType } from "../../entities/models/invoice";
-import { LoggerUseCasePort } from "../common/interfaces";
+import { LoggerUseCasePort, TranslationUseCasePort } from "../common/interfaces";
 import {
   CreateInvoiceInput,
   InvoiceFilterInput,
@@ -18,6 +18,7 @@ describe("Invoices tests suites", () => {
   let currentUser: User;
   let invoice: Invoice;
   let logger: LoggerUseCasePort;
+  let translator: TranslationUseCasePort;
 
   beforeEach(() => {
     invoiceRepository = new Mock<InvoiceRepositoryPort>();
@@ -40,6 +41,10 @@ describe("Invoices tests suites", () => {
       .setup((x) => x.error(It.IsAny()))
       .returns()
       .object();
+    translator = new Mock<TranslationUseCasePort>()
+      .setup((x) => x.translate(It.IsAny(), It.IsAny()))
+      .returns("translated")
+      .object();
 
     currentUser = {
       id: "1",
@@ -55,7 +60,12 @@ describe("Invoices tests suites", () => {
   describe("create invoice", () => {
     it("should create an invoice", async () => {
       invoiceRepository.setup((x) => x.create).returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-unused-vars
       const { id, created_at, updated_at, deleted_at, user_id, ...input } = invoice;
       const result = await invoiceUseCase.create(input);
@@ -65,7 +75,12 @@ describe("Invoices tests suites", () => {
 
     it("should throw an error if the address_id is not provided", async () => {
       invoiceRepository.setup((x) => x.create).returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: CreateInvoiceInput = {
         address_id: "",
         client_address_id: "2",
@@ -81,7 +96,12 @@ describe("Invoices tests suites", () => {
 
     it("should throw an error if the client_address_id is not provided", async () => {
       invoiceRepository.setup((x) => x.create).returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: CreateInvoiceInput = {
         address_id: "1",
         client_address_id: "",
@@ -97,7 +117,12 @@ describe("Invoices tests suites", () => {
 
     it("should throw an error if the due date it's before the date", async () => {
       invoiceRepository.setup((x) => x.create).returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: CreateInvoiceInput = {
         address_id: "1",
         client_address_id: "2",
@@ -119,7 +144,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve(invoice))
         .setup((x) => x.findByID)
         .returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       // eslint-disable-next-line @typescript-eslint/no-unused-vars,no-unused-vars
       const { created_at, updated_at, deleted_at, user_id, ...input } = invoice;
       const result = await invoiceUseCase.update(input);
@@ -133,7 +163,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve(invoice))
         .setup((x) => x.findByID)
         .returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: UpdateInvoiceInput = {
         id: "1",
         due_date: new Date("2020-01-01"),
@@ -147,7 +182,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve(invoice))
         .setup((x) => x.findByID)
         .returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const input: UpdateInvoiceInput = {
         id: "1",
         date: new Date("2024-01-01"),
@@ -163,7 +203,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve())
         .setup((x) => x.findByID)
         .returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(invoiceUseCase.delete(invoice.id)).resolves.toBeUndefined();
     });
@@ -175,7 +220,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve())
         .setup((x) => x.findByID)
         .returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(invoiceUseCase.delete(invoice.id)).rejects.toThrowError(ValidationError);
     });
@@ -184,7 +234,12 @@ describe("Invoices tests suites", () => {
   describe("get invoice by id", () => {
     it("should get an invoice", async () => {
       invoiceRepository.setup((x) => x.findByID).returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       const result = await invoiceUseCase.findByID(invoice.id);
 
@@ -194,7 +249,12 @@ describe("Invoices tests suites", () => {
     it("should throw an error if the invoice does not belongs to the user", async () => {
       invoice.user_id = "2";
       invoiceRepository.setup((x) => x.findByID).returns(() => Promise.resolve(invoice));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(invoiceUseCase.findByID(invoice.id)).rejects.toThrowError(ValidationError);
     });
@@ -203,7 +263,12 @@ describe("Invoices tests suites", () => {
   describe("get invoices", () => {
     it("should get all invoices", async () => {
       invoiceRepository.setup((x) => x.findAll).returns(() => Promise.resolve([invoice]));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const filter: InvoiceFilterInput = {
         direction: "ASC",
         limit: 1,
@@ -217,7 +282,12 @@ describe("Invoices tests suites", () => {
 
     it("should get all invoices with a filter", async () => {
       invoiceRepository.setup((x) => x.findAll).returns(() => Promise.resolve([invoice]));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const filter: InvoiceFilterInput = {
         direction: "ASC",
         limit: 1,
@@ -234,7 +304,12 @@ describe("Invoices tests suites", () => {
     it("should throw an error if the invoices does not belongs to the user", async () => {
       invoice.user_id = "2";
       invoiceRepository.setup((x) => x.findAll).returns(() => Promise.resolve([invoice]));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
       const filter: InvoiceFilterInput = {
         direction: "ASC",
         limit: 1,
@@ -252,7 +327,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve(invoice))
         .setup((x) => x.getDiscount)
         .returns(() => Promise.resolve(10));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(invoiceUseCase.getDiscount(invoice.id)).resolves.toBe(10);
     });
@@ -275,7 +355,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve(invoice))
         .setup((x) => x.getInvoiceTaxes)
         .returns(() => Promise.resolve(taxes));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(invoiceUseCase.getInvoiceTaxes(invoice.id)).resolves.toEqual(taxes);
     });
@@ -286,7 +371,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve(invoice))
         .setup((x) => x.getNonTaxableAmount)
         .returns(() => Promise.resolve(15.15));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(invoiceUseCase.getNonTaxableAmount(invoice.id)).resolves.toEqual(15.15);
     });
@@ -297,7 +387,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve(invoice))
         .setup((x) => x.getSubtotal)
         .returns(() => Promise.resolve(101.36));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(invoiceUseCase.getSubtotal(invoice.id)).resolves.toEqual(101.36);
     });
@@ -308,7 +403,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve(invoice))
         .setup((x) => x.getTaxableAmount)
         .returns(() => Promise.resolve(30.36));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(invoiceUseCase.getTaxableAmount(invoice.id)).resolves.toEqual(30.36);
     });
@@ -319,7 +419,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve(invoice))
         .setup((x) => x.getTaxAmount)
         .returns(() => Promise.resolve(21.5));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(invoiceUseCase.getTaxAmount(invoice.id)).resolves.toEqual(21.5);
     });
@@ -330,7 +435,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve(invoice))
         .setup((x) => x.getTotal)
         .returns(() => Promise.resolve(101.36));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(invoiceUseCase.getTotal(invoice.id)).resolves.toEqual(101.36);
     });
@@ -356,7 +466,12 @@ describe("Invoices tests suites", () => {
         .returns(() => Promise.resolve(invoice))
         .setup((x) => x.getInvoiceItems)
         .returns(() => Promise.resolve(items));
-      const invoiceUseCase = new InvoiceUseCase(invoiceRepository.object(), logger, currentUser);
+      const invoiceUseCase = new InvoiceUseCase(
+        invoiceRepository.object(),
+        logger,
+        translator,
+        currentUser,
+      );
 
       await expect(invoiceUseCase.getInvoiceItems(invoice.id)).resolves.toEqual(items);
     });

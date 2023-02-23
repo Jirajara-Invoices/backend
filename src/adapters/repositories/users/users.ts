@@ -11,6 +11,7 @@ import {
   UserRepositoryPort,
 } from "../../../usecases/users/interfaces";
 import { UnauthorizedError, UnknownError, ValidationError } from "../../../entities/errors";
+import { TranslationUseCasePort } from "../../../usecases/common/interfaces";
 
 function mapUser(user: Record<string, string>): User {
   const user_mapped: User = {
@@ -34,7 +35,7 @@ export class UserRepository implements UserRepositoryPort {
   private dbPool: DatabasePool;
   private userLoader: DataLoader<string, User>;
 
-  constructor(dbPool: DatabasePool) {
+  constructor(dbPool: DatabasePool, private readonly translator: TranslationUseCasePort) {
     this.dbPool = dbPool;
     this.userLoader = new DataLoader(async (ids: readonly string[]) => {
       const users = await this.dbPool.any(
@@ -47,7 +48,7 @@ export class UserRepository implements UserRepositoryPort {
         if (user) {
           usersMapped.push(mapUser(user));
         } else {
-          usersMapped.push(new Error(`User with id ${id} not found`));
+          usersMapped.push(new Error(this.translator.translate("notFoundError")));
         }
       }
 

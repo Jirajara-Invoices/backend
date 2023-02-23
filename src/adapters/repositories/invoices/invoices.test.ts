@@ -6,12 +6,20 @@ import { InvoiceRepository } from "./invoices";
 import { CreateInvoiceInput, InvoiceFilterInput } from "../../../usecases/invoices/interfaces";
 import { InvoiceItemType } from "../../../entities/models/invoice_items";
 import { TaxCalcType } from "../../../entities/models/taxes";
+import { TranslationUseCasePort } from "../../../usecases/common/interfaces";
+import { It, Mock } from "moq.ts";
 
 describe("InvoicesRepository", () => {
   let invoice: Invoice;
   let invoiceResult: QueryResultRow[];
+  let translator: TranslationUseCasePort;
 
   beforeEach(() => {
+    translator = new Mock<TranslationUseCasePort>()
+      .setup((x) => x.translate(It.IsAny(), It.IsAny()))
+      .returns("translated")
+      .object();
+
     invoice = {
       id: "1",
       user_id: "1",
@@ -50,14 +58,14 @@ describe("InvoicesRepository", () => {
   describe("findByID", () => {
     it("should return an invoice", async () => {
       const dbPool = makePool(invoiceResult);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const dbInvoice = await repo.findByID(invoice.id);
       expect(dbInvoice).toEqual(invoice);
     });
 
     it("should throw an error if the invoice does not exist", async () => {
       const dbPool = makePool([]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       await expect(repo.findByID(invoice.id)).rejects.toThrow(Error);
     });
   });
@@ -65,7 +73,7 @@ describe("InvoicesRepository", () => {
   describe("findByFilter", () => {
     it("should return an array of invoices", async () => {
       const dbPool = makePool(invoiceResult);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const filter: InvoiceFilterInput = { limit: 10, direction: "ASC" };
       const dbInvoices = await repo.findAll(filter);
       expect(dbInvoices).toEqual([invoice]);
@@ -73,7 +81,7 @@ describe("InvoicesRepository", () => {
 
     it("should return an empty array if no invoices are found", async () => {
       const dbPool = makePool([]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const filter: InvoiceFilterInput = { limit: 10, direction: "ASC" };
       const dbInvoices = await repo.findAll(filter);
       expect(dbInvoices).toEqual([]);
@@ -83,7 +91,7 @@ describe("InvoicesRepository", () => {
   describe("create", () => {
     it("should return the created invoice", async () => {
       const dbPool = makePool(invoiceResult);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const input: CreateInvoiceInput = {
         ...invoice,
       };
@@ -95,7 +103,7 @@ describe("InvoicesRepository", () => {
   describe("update", () => {
     it("should return the updated invoice", async () => {
       const dbPool = makePool(invoiceResult);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const dbInvoice = await repo.update(invoice, invoice.user_id);
       expect(dbInvoice).toEqual(invoice);
     });
@@ -104,7 +112,7 @@ describe("InvoicesRepository", () => {
   describe("delete", () => {
     it("should return the deleted invoice", async () => {
       const dbPool = makePool(invoiceResult);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const dbInvoice = await repo.delete(invoice.id);
 
       expect(dbInvoice).toBeUndefined();
@@ -140,7 +148,7 @@ describe("InvoicesRepository", () => {
           type: InvoiceItemType.Discount,
         },
       ]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getDiscount(invoice.id);
 
       expect(amount).toEqual(100);
@@ -148,7 +156,7 @@ describe("InvoicesRepository", () => {
 
     it("should return 0 discount amount", async () => {
       const dbPool = makePool([]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getDiscount(invoice.id);
 
       expect(amount).toEqual(0);
@@ -156,7 +164,7 @@ describe("InvoicesRepository", () => {
 
     it("should return tax amount", async () => {
       const dbPool = makePool([queryResultItemTemplate]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getTaxAmount(invoice.id);
 
       expect(amount).toEqual(10);
@@ -164,7 +172,7 @@ describe("InvoicesRepository", () => {
 
     it("should return 0 tax amount", async () => {
       const dbPool = makePool([]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getTaxAmount(invoice.id);
 
       expect(amount).toEqual(0);
@@ -172,7 +180,7 @@ describe("InvoicesRepository", () => {
 
     it("should return subtotal amount", async () => {
       const dbPool = makePool([queryResultItemTemplate]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getSubtotal(invoice.id);
 
       expect(amount).toEqual(100);
@@ -180,7 +188,7 @@ describe("InvoicesRepository", () => {
 
     it("should return 0 subtotal amount", async () => {
       const dbPool = makePool([]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getSubtotal(invoice.id);
 
       expect(amount).toEqual(0);
@@ -188,7 +196,7 @@ describe("InvoicesRepository", () => {
 
     it("should return total amount", async () => {
       const dbPool = makePool([queryResultItemTemplate]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getTotal(invoice.id);
 
       expect(amount).toEqual(110);
@@ -196,7 +204,7 @@ describe("InvoicesRepository", () => {
 
     it("should return 0 total amount", async () => {
       const dbPool = makePool([]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getTotal(invoice.id);
 
       expect(amount).toEqual(0);
@@ -204,7 +212,7 @@ describe("InvoicesRepository", () => {
 
     it("should return taxable amount", async () => {
       const dbPool = makePool([queryResultItemTemplate]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getTaxableAmount(invoice.id);
 
       expect(amount).toEqual(100);
@@ -212,7 +220,7 @@ describe("InvoicesRepository", () => {
 
     it("should return 0 taxable amount", async () => {
       const dbPool = makePool([]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getTaxableAmount(invoice.id);
 
       expect(amount).toEqual(0);
@@ -228,7 +236,7 @@ describe("InvoicesRepository", () => {
           tax_calc_type: null,
         },
       ]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getNonTaxableAmount(invoice.id);
 
       expect(amount).toEqual(100);
@@ -236,7 +244,7 @@ describe("InvoicesRepository", () => {
 
     it("should return 0 non taxable amount", async () => {
       const dbPool = makePool([]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const amount = await repo.getNonTaxableAmount(invoice.id);
 
       expect(amount).toEqual(0);
@@ -245,7 +253,7 @@ describe("InvoicesRepository", () => {
     it("should return taxes list", async () => {
       const newResult = { ...queryResultItemTemplate, tax_id: "1" };
       const dbPool = makePool([newResult]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const taxes = await repo.getInvoiceTaxes(invoice.id);
 
       expect(taxes).toEqual([
@@ -264,7 +272,7 @@ describe("InvoicesRepository", () => {
 
     it("should return empty taxes list", async () => {
       const dbPool = makePool([]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const taxes = await repo.getInvoiceTaxes(invoice.id);
 
       expect(taxes).toEqual([]);
@@ -272,7 +280,7 @@ describe("InvoicesRepository", () => {
 
     it("should return items list", async () => {
       const dbPool = makePool([queryResultItemTemplate]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const taxes = await repo.getInvoiceItems(invoice.id);
 
       expect(taxes).toEqual([
@@ -294,7 +302,7 @@ describe("InvoicesRepository", () => {
 
     it("should return empty items list", async () => {
       const dbPool = makePool([]);
-      const repo = new InvoiceRepository(dbPool);
+      const repo = new InvoiceRepository(dbPool, translator);
       const taxes = await repo.getInvoiceItems(invoice.id);
 
       expect(taxes).toEqual([]);

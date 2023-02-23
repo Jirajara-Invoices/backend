@@ -10,6 +10,7 @@ import {
   CreateAddressInput,
   UpdateAddressInput,
 } from "../../../usecases/addresses/interfaces";
+import { TranslationUseCasePort } from "../../../usecases/common/interfaces";
 
 const addressZodSchema = z.object({
   id: z.string(),
@@ -57,7 +58,7 @@ function mapAddress(address: AddressZodSchema): Address {
 
 export class AddressRepository implements AddressRepositoryPort {
   private addressLoader: DataLoader<string, Address>;
-  constructor(private dbPool: DatabasePool) {
+  constructor(private dbPool: DatabasePool, private readonly translator: TranslationUseCasePort) {
     this.addressLoader = new DataLoader(async (ids: readonly string[]) => {
       const addresses = await this.dbPool.any(
         sql.type(addressZodSchema)`SELECT * FROM addresses WHERE id IN (${sql.join(
@@ -72,7 +73,7 @@ export class AddressRepository implements AddressRepositoryPort {
         if (address) {
           addressesMapped.push(mapAddress(address));
         } else {
-          addressesMapped.push(new Error(`Address with id ${id} not found`));
+          addressesMapped.push(new Error(this.translator.translate("notFoundError")));
         }
       }
 

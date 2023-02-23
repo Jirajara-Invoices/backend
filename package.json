@@ -20,11 +20,11 @@
     "snyk": "snyk test",
     "prepare": "husky install"
   },
-    "lint-staged": {
-        "*.{js,ts,tsx}": [
-        "eslint --ext .ts,.tsx ."
-        ]
-    },
+  "lint-staged": {
+    "*.{js,ts,tsx}": [
+      "eslint --ext .ts,.tsx ."
+    ]
+  },
   "keywords": [],
   "author": "Adolfo Bastardo <adolfo.bastardo@gmail.com>",
   "private": true,
@@ -52,6 +52,8 @@
     "graphql": "^16.6.0",
     "helmet": "^6.0.1",
     "i18n-iso-countries": "^7.5.0",
+    "i18next": "^22.4.10",
+    "i18next-http-middleware": "^3.2.2",
     "ioredis": "^5.3.0",
     "jspdf": "^2.5.1",
     "lint-staged": "^13.1.2",

@@ -7,12 +7,20 @@ import {
   TaxesFilterInput,
   UpdateTaxInput,
 } from "../../../usecases/taxes/interfaces";
+import { TranslationUseCasePort } from "../../../usecases/common/interfaces";
+import { It, Mock } from "moq.ts";
 
 describe("TaxRepository", () => {
   let tax: Tax;
   let taxResult: QueryResultRow[];
+  let translator: TranslationUseCasePort;
 
   beforeEach(() => {
+    translator = new Mock<TranslationUseCasePort>()
+      .setup((x) => x.translate(It.IsAny(), It.IsAny()))
+      .returns("translated")
+      .object();
+
     tax = {
       id: "1",
       user_id: "1",
@@ -41,14 +49,14 @@ describe("TaxRepository", () => {
   describe("findByID", () => {
     it("should return a tax", async () => {
       const dbPool = makePool(taxResult);
-      const repo = new TaxRepository(dbPool);
+      const repo = new TaxRepository(dbPool, translator);
       const dbTax = await repo.findByID(tax.id);
       expect(dbTax).toEqual(tax);
     });
 
     it("should throw an error if the tax does not exist", async () => {
       const dbPool = makePool([]);
-      const repo = new TaxRepository(dbPool);
+      const repo = new TaxRepository(dbPool, translator);
       await expect(repo.findByID(tax.id)).rejects.toThrow(Error);
     });
   });
@@ -56,7 +64,7 @@ describe("TaxRepository", () => {
   describe("findAll", () => {
     it("should return all taxes", async () => {
       const dbPool = makePool(taxResult);
-      const repo = new TaxRepository(dbPool);
+      const repo = new TaxRepository(dbPool, translator);
       const filter: TaxesFilterInput = {
         limit: 10,
         direction: "ASC",
@@ -67,7 +75,7 @@ describe("TaxRepository", () => {
 
     it("should return an empty list", async () => {
       const dbPool = makePool([]);
-      const repo = new TaxRepository(dbPool);
+      const repo = new TaxRepository(dbPool, translator);
       const filter: TaxesFilterInput = {
         limit: 10,
         direction: "ASC",
@@ -80,7 +88,7 @@ describe("TaxRepository", () => {
   describe("create", () => {
     it("should create a tax", async () => {
       const dbPool = makePool(taxResult);
-      const repo = new TaxRepository(dbPool);
+      const repo = new TaxRepository(dbPool, translator);
       const input: CreateTaxInput = {
         calc_type: TaxCalcType.Fixed,
         name: tax.name,
@@ -94,7 +102,7 @@ describe("TaxRepository", () => {
   describe("update", () => {
     it("should update a tax", async () => {
       const dbPool = makePool(taxResult);
-      const repo = new TaxRepository(dbPool);
+      const repo = new TaxRepository(dbPool, translator);
       const input: UpdateTaxInput = {
         id: tax.id,
         calc_type: TaxCalcType.Fixed,
@@ -107,7 +115,7 @@ describe("TaxRepository", () => {
   describe("delete", () => {
     it("should delete a tax", async () => {
       const dbPool = makePool(taxResult);
-      const repo = new TaxRepository(dbPool);
+      const repo = new TaxRepository(dbPool, translator);
       const dbTax = await repo.delete(tax.id);
       expect(dbTax).toBeUndefined();
     });

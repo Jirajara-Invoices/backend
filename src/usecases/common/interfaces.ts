@@ -4,3 +4,7 @@ export interface LoggerUseCasePort {
   debug(message: string, data?: any): void;
   warn(message: string, data?: any): void;
 }
+
+export interface TranslationUseCasePort {
+  translate(key: string, data?: Record<string, string>): string;
+}

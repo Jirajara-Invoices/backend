@@ -32,7 +32,7 @@ export function createAuthDirective(schema: GraphQLSchema, directiveName: string
 
           fieldConfig.resolve = async function (source, args, context: GraphQLContext, info) {
             if (!context.auth.user) {
-              throw new GraphQLError("Not authenticated", {
+              throw new GraphQLError(context.req.t("authenticationError"), {
                 extensions: { code: "UNAUTHENTICATED" },
               });
             }
@@ -41,7 +41,7 @@ export function createAuthDirective(schema: GraphQLSchema, directiveName: string
               (requires as string).toLowerCase() === UserRole.Admin &&
               context.auth.user?.role !== UserRole.Admin
             ) {
-              throw new GraphQLError("Not authorized", {
+              throw new GraphQLError(context.req.t("authorizationError"), {
                 extensions: { code: "UNAUTHORIZED" },
               });
             }

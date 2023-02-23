@@ -1,0 +1,12 @@
+{
+  "authenticationError": "No has iniciado sesión",
+  "authorizationError": "No tienes permiso para realizar esta acción",
+  "filtersError": "Filtros de búsqueda inválidos",
+  "validationError": "Uno o varios de los datos proporcionados no son válidos",
+  "updatePermissionsError": "No tienes permiso para actualizar este recurso",
+  "deleteError": "No tienes permiso para eliminar este recurso",
+  "notFoundError": "No se ha encontrado el recurso",
+  "viewError": "No tienes permiso para ver este recurso",
+  "viewAllError": "No tienes permiso para ver todos los recursos",
+  "generatePdfError": "No tienes permiso para generar el PDF de esta factura"
+}

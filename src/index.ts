@@ -9,6 +9,8 @@ import express, {
   RequestHandler,
   Response,
 } from "express";
+import i18next from "i18next";
+import middleware from "i18next-http-middleware";
 import expressSession from "express-session";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
@@ -34,6 +36,7 @@ import { createQueryLoggingInterceptor } from "slonik-interceptor-query-logging"
 import { createAuthDirective } from "./utilities/auth";
 import { morganMiddleware } from "./utilities/morgan";
 import { generatePDF } from "./adapters/controllers/generatePDF";
+import { initializeI18n } from "./utilities/i18n";
 
 const envConfig = dotenv.config();
 dotenvExpand.expand(envConfig);
@@ -56,31 +59,8 @@ const store = new RedisStore({
 const app = express();
 const httpServer = http.createServer(app);
 
-const schema = createAuthDirective(
-  makeExecutableSchema({
-    typeDefs,
-    resolvers,
-  }),
-  "auth",
-);
-
-const plugins = [ApolloServerPluginDrainHttpServer({ httpServer })];
-
-!isProduction &&
-  plugins.push(
-    ApolloServerPluginLandingPageLocalDefault({
-      includeCookies: true,
-    }),
-  );
-
-// The ApolloServer constructor requires two parameters: your schema
-// definition and your set of resolvers.
-const apollo = new ApolloServer<GraphQLContext>({
-  introspection: !isProduction,
-  schema,
-  plugins,
-  csrfPrevention: true,
-});
+await initializeI18n();
+app.use(middleware.handle(i18next));
 
 const rateLimiter = new RateLimiterRedis({
   storeClient: redis,
@@ -136,8 +116,6 @@ const pool = await createPool(process.env.DATABASE_URL || "", {
   interceptors,
 });
 
-await apollo.start();
-
 const { invalidCsrfTokenError, generateToken, doubleCsrfProtection } = doubleCsrf({
   getSecret: (req) => req?.secret || "",
   cookieName: CSRF_COOKIE_NAME,
@@ -169,6 +147,34 @@ const csrfErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
     next();
   }
 };
+
+const plugins = [ApolloServerPluginDrainHttpServer({ httpServer })];
+
+!isProduction &&
+  plugins.push(
+    ApolloServerPluginLandingPageLocalDefault({
+      includeCookies: true,
+    }),
+  );
+
+const schema = createAuthDirective(
+  makeExecutableSchema({
+    typeDefs,
+    resolvers,
+  }),
+  "auth",
+);
+
+// The ApolloServer constructor requires two parameters: your schema
+// definition and your set of resolvers.
+const apollo = new ApolloServer<GraphQLContext>({
+  introspection: !isProduction,
+  schema,
+  plugins,
+  csrfPrevention: true,
+});
+
+await apollo.start();
 
 app.use(
   "/graphql",

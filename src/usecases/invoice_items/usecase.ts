@@ -1,9 +1,8 @@
 import { User } from "../../entities/models/users";
 import { InvoiceItem } from "../../entities/models/invoice_items";
 import { ValidationError } from "../../entities/errors";
-import { mapToString } from "../../utilities/arrays";
 import { BaseUseCase } from "../common/base";
-import { LoggerUseCasePort } from "../common/interfaces";
+import { LoggerUseCasePort, TranslationUseCasePort } from "../common/interfaces";
 import { validateFiltersInput } from "../common/validators";
 import {
   CreateItemInput,
@@ -18,16 +17,16 @@ export class InvoiceItemUseCase extends BaseUseCase implements InvoiceItemUseCas
   constructor(
     private readonly repository: InvoiceItemRepositoryPort,
     private readonly logger: LoggerUseCasePort,
+    translator: TranslationUseCasePort,
     currentUser: User | null,
   ) {
-    super(currentUser);
+    super(translator, currentUser);
   }
 
   async create(input: CreateItemInput): Promise<InvoiceItem> {
     const errors = validateCreateItemInput(input);
     if (errors.size > 0) {
-      this.logger.error(`Invalid input for invoice item creation: ${mapToString(errors)}`);
-      throw new ValidationError("Invalid input for invoice item creation", errors);
+      throw new ValidationError(this.translator.translate("validationError"), errors);
     }
     return await this.repository.create(input);
   }
@@ -35,8 +34,7 @@ export class InvoiceItemUseCase extends BaseUseCase implements InvoiceItemUseCas
   async update(input: UpdateItemInput): Promise<InvoiceItem> {
     const errors = validateUpdateItemInput(input);
     if (errors.size > 0) {
-      this.logger.error(`Invalid input for update invoice item: ${mapToString(errors)}`);
-      throw new ValidationError("Invalid input for update invoice item", errors);
+      throw new ValidationError(this.translator.translate("validationError"), errors);
     }
 
     return await this.repository.update(input, this.getCurrentUserId());
@@ -56,8 +54,7 @@ export class InvoiceItemUseCase extends BaseUseCase implements InvoiceItemUseCas
     const currentUserId = this.isCurrentUserAdmin() ? null : this.getCurrentUserId();
     const errors = validateFiltersInput(filter);
     if (errors.size > 0) {
-      this.logger.error(`Invalid input for invoice items filter: ${mapToString(errors)}`);
-      throw new ValidationError("Invalid input for invoice items filter", errors);
+      throw new ValidationError(this.translator.translate("filtersError"), errors);
     }
 
     return await this.repository.findAll(filter, currentUserId);
