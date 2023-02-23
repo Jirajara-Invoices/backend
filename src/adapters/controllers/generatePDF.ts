@@ -22,12 +22,13 @@ export const generatePDF =
     const user = await getAuthUser(req.session, userUseCase, redis, loggerAdapter);
 
     if (!user) {
-      res.status(401).send("You are not authorized to perform this action");
+      res.status(401).send(translator.translate("authorizationError"));
+      return;
     }
 
     const addressRepository = new AddressRepository(dbPool, translator);
     const invoiceRepository = new InvoiceRepository(dbPool, translator);
-    const pdfRepository = new PDFInvoicePrinter(addressRepository, invoiceRepository);
+    const pdfRepository = new PDFInvoicePrinter(addressRepository, invoiceRepository, translator);
     const pdfUseCase = new PDFInvoiceUseCase(
       invoiceRepository,
       pdfRepository,

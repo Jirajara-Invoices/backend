@@ -6,6 +6,7 @@ import { Invoice, InvoiceStatus, InvoiceType } from "../../../entities/models/in
 import { Address, AddressType } from "../../../entities/models/addresses";
 import { InvoiceItem, InvoiceItemType } from "../../../entities/models/invoice_items";
 import { Tax, TaxCalcType } from "../../../entities/models/taxes";
+import { TranslationUseCasePort } from "../../../usecases/common/interfaces";
 
 describe("PrintInvoices", () => {
   const invoice: Invoice = {
@@ -27,6 +28,12 @@ describe("PrintInvoices", () => {
   let clientAddress: Address;
   let addressRepository: AddressRepositoryPort;
   let invoiceRepository: InvoiceRepositoryPort;
+  const translator: TranslationUseCasePort = new Mock<TranslationUseCasePort>()
+    .setup((x) => x.translate(It.IsAny(), It.IsAny()))
+    .returns("translated")
+    .setup((x) => x.translate(It.IsAny()))
+    .returns("translated")
+    .object();
 
   const items: InvoiceItem[] = [
     {
@@ -107,7 +114,7 @@ describe("PrintInvoices", () => {
       .setup((x) => x.getTotal)
       .returns(() => Promise.resolve(112))
       .object();
-    const printInvoices = new PDFInvoicePrinter(addressRepository, invoiceRepository);
+    const printInvoices = new PDFInvoicePrinter(addressRepository, invoiceRepository, translator);
     const result = await printInvoices.generate(invoice);
 
     expect(result).toMatchSnapshot();

@@ -8,6 +8,7 @@ import { PDFInvoicePrinterPort } from "../../../usecases/pdf_invoices/interfaces
 import { AddressRepositoryPort } from "../../../usecases/addresses/interfaces";
 import { InvoiceItem } from "../../../entities/models/invoice_items";
 import { Tax, TaxCalcType } from "../../../entities/models/taxes";
+import { TranslationUseCasePort } from "../../../usecases/common/interfaces";
 
 export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
   private readonly NORMAL_COLOR = "#303030";
@@ -37,41 +38,44 @@ export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
   private currentPage = 1;
   private readonly ROW_ADD_HEIGHT = 8;
 
-  private tableHeaders: CellConfig[] = [
-    {
-      name: "concept",
-      width: 150,
-      align: "left",
-      prompt: "Concepto",
-      padding: 0,
-    },
-    {
-      name: "quantity",
-      width: 35,
-      align: "center",
-      prompt: "Cantidad",
-      padding: 0,
-    },
-    {
-      name: "price",
-      width: 35,
-      align: "left",
-      prompt: "Precio",
-      padding: 0,
-    },
-    {
-      name: "total",
-      width: 40,
-      align: "left",
-      prompt: "Total",
-      padding: 0,
-    },
-  ];
+  private readonly tableHeaders: CellConfig[];
 
   constructor(
     private readonly addressRepository: AddressRepositoryPort,
     private readonly invoiceRepository: InvoiceRepositoryPort,
-  ) {}
+    private readonly translator: TranslationUseCasePort,
+  ) {
+    this.tableHeaders = [
+      {
+        name: "concept",
+        width: 150,
+        align: "left",
+        prompt: this.translator.translate("invoicePDFInvoiceItemsConcept"),
+        padding: 0,
+      },
+      {
+        name: "quantity",
+        width: 35,
+        align: "center",
+        prompt: this.translator.translate("invoicePDFInvoiceItemsQuantity"),
+        padding: 0,
+      },
+      {
+        name: "price",
+        width: 35,
+        align: "left",
+        prompt: this.translator.translate("invoicePDFInvoiceItemsPrice"),
+        padding: 0,
+      },
+      {
+        name: "total",
+        width: 40,
+        align: "left",
+        prompt: this.translator.translate("invoicePDFInvoiceItemsTotal"),
+        padding: 0,
+      },
+    ];
+  }
 
   public async generate(invoice: Invoice): Promise<Blob> {
     this.invoice = invoice;
@@ -89,14 +93,16 @@ export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
 
     this.doc?.setDocumentProperties({
       author: this.address?.name,
-      title: `Invoice ${this.invoice?.number}`,
+      title: this.translator.translate("invoicePDFTitleWithNumber", {
+        invoiceNumber: this.invoice?.number.toString() ?? 0,
+      }),
       creator: "Jirajara Invoice Generator",
-      subject: "Invoice",
+      subject: this.translator.translate("invoicePDFTitle"),
     });
 
     const blob = this.doc?.output("blob");
     if (!blob) {
-      throw new Error("Error generating PDF");
+      throw new Error(this.translator.translate("invoicePDFError"));
     }
 
     return blob;
@@ -112,7 +118,7 @@ export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
 
   private loadFonts() {
     if (!this.doc) {
-      throw new Error("Document is null");
+      throw new Error(this.translator.translate("invoicePDFDocError"));
     }
     const { pathname } = new URL("../../../../", import.meta.url);
     const robotoLight = readFileSync(`${pathname}assets/fonts/Roboto/Roboto-Light.ttf`, {
@@ -139,13 +145,13 @@ export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
 
   private addTitlesAndHeaders() {
     if (!this.doc || !this.address) {
-      throw new Error("All invoice details are required");
+      throw new Error(this.translator.translate("invoicePDFFieldsError"));
     }
 
     this.doc.setFont("Roboto", "bold");
     this.doc.setFontSize(20);
     this.doc.setTextColor("#585858");
-    this.doc.text("Invoice", 10, 10, { baseline: "top" });
+    this.doc.text(this.translator.translate("invoicePDFTitle"), 10, 10, { baseline: "top" });
 
     // Add titles and headers
     this.doc.setFont("Roboto", "500normal");
@@ -153,24 +159,40 @@ export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
     this.doc.setTextColor(this.TITLE_COLOR);
     this.doc.setDrawColor(this.TITLE_COLOR);
     this.doc.text(this.address.name || "", 10, 25, { baseline: "top" });
-    this.doc.text("Fecha", 140, 25, { baseline: "top", maxWidth: 30 });
+    this.doc.text(this.translator.translate("invoicePDFDate"), 140, 25, {
+      baseline: "top",
+      maxWidth: 30,
+    });
     this.doc.line(140, 30, 205, 30);
-    this.doc.text("Fecha de vencimiento", 140, 32, { baseline: "top", maxWidth: 30 });
+    this.doc.text(this.translator.translate("invoicePDFDueDate"), 140, 32, {
+      baseline: "top",
+      maxWidth: 30,
+    });
     this.doc.line(140, 42, 205, 42);
-    this.doc.text("Factura No. #", 140, 44, { baseline: "top", maxWidth: 30 });
+    this.doc.text(this.translator.translate("invoicePDFInvoiceNumber"), 140, 44, {
+      baseline: "top",
+      maxWidth: 30,
+    });
     this.doc.line(140, 49, 205, 49);
-    this.doc.text("No. de Control #", 140, 51, { baseline: "top", maxWidth: 30 });
+    this.doc.text(this.translator.translate("invoicePDFInvoiceControlNumber"), 140, 51, {
+      baseline: "top",
+      maxWidth: 30,
+    });
     this.doc.line(140, 56, 205, 56);
 
-    this.doc.text("Cobrar a:", 10, 64, { baseline: "top" });
+    this.doc.text(this.translator.translate("invoicePDFInvoiceBillTo"), 10, 64, {
+      baseline: "top",
+    });
     this.doc.line(10, 68, 115, 68);
-    this.doc.text("Comentarios:", 120, 64, { baseline: "top" });
+    this.doc.text(this.translator.translate("invoicePDFInvoiceComments"), 120, 64, {
+      baseline: "top",
+    });
     this.doc.line(120, 68, 205, 68);
   }
 
   private addInvoiceDetails() {
     if (!this.doc || !this.invoice || !this.address || !this.clientAddress) {
-      throw new Error("All invoice details are required");
+      throw new Error(this.translator.translate("invoicePDFFieldsError"));
     }
 
     this.doc.setFont("Roboto", "normal");
@@ -218,7 +240,7 @@ export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
 
   private _generateAddressLines(address: Address) {
     if (!this.doc) {
-      throw new Error("All invoice details are required");
+      throw new Error(this.translator.translate("invoicePDFFieldsError"));
     }
     const clientData: string[] = this.doc.splitTextToSize(`${address.name}`, 150);
     if (address.tax_id) {
@@ -251,7 +273,7 @@ export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
 
   private addInvoiceItems() {
     if (!this.doc || !this.invoice) {
-      throw new Error("All invoice details are required");
+      throw new Error(this.translator.translate("invoicePDFFieldsError"));
     }
 
     const itemsData = this.items.map((item) => ({
@@ -300,21 +322,35 @@ export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
 
   private addInvoiceTotals() {
     if (!this.doc || !this.invoice) {
-      throw new Error("All invoice details are required");
+      throw new Error(this.translator.translate("invoicePDFFieldsError"));
     }
 
     // add subtitles
     this.doc.setFont("Roboto", "bold");
     this.doc.setFontSize(10);
     this.doc.setTextColor(this.SUBTITLE_COLOR);
-    this.doc.text("Términos y condiciones", 10, this.rowPointer + 10, {
+    this.doc.text(this.translator.translate("invoicePDFInvoiceTerms"), 10, this.rowPointer + 10, {
       baseline: "top",
       maxWidth: 100,
     });
-    this.doc.text("Subtotal", 140, this.rowPointer + 10, { baseline: "top", maxWidth: 50 });
-    this.doc.text("IVA", 140, this.rowPointer + 18, { baseline: "top", maxWidth: 50 });
-    this.doc.text("Otros Impuestos", 140, this.rowPointer + 26, { baseline: "top", maxWidth: 50 });
-    this.doc.text("Total", 140, this.rowPointer + 34, { baseline: "top", maxWidth: 50 });
+    this.doc.text(
+      this.translator.translate("invoicePDFInvoiceSubtotal"),
+      140,
+      this.rowPointer + 10,
+      { baseline: "top", maxWidth: 50 },
+    );
+    this.doc.text(this.translator.translate("invoicePDFInvoiceVAT"), 140, this.rowPointer + 18, {
+      baseline: "top",
+      maxWidth: 50,
+    });
+    this.doc.text(this.translator.translate("invoicePDFInvoiceTaxes"), 140, this.rowPointer + 26, {
+      baseline: "top",
+      maxWidth: 50,
+    });
+    this.doc.text(this.translator.translate("invoicePDFInvoiceTotal"), 140, this.rowPointer + 34, {
+      baseline: "top",
+      maxWidth: 50,
+    });
 
     this.doc.setFont("Roboto", "normal");
     this.doc.setTextColor(this.NORMAL_COLOR);
@@ -326,8 +362,12 @@ export class PDFInvoicePrinter implements PDFInvoicePrinterPort {
       });
     }
 
-    const ivaTax = this.taxes.find((tax) => tax.name.includes("IVA"));
-    const otherTaxes = this.taxes.filter((tax) => !tax.name.includes("IVA"));
+    const ivaTax = this.taxes.find((tax) =>
+      tax.name.includes(this.translator.translate("invoicePDFInvoiceVAT")),
+    );
+    const otherTaxes = this.taxes.filter(
+      (tax) => !tax.name.includes(this.translator.translate("invoicePDFInvoiceVAT")),
+    );
 
     // The iva tax is always calculated as a percentage of each item that has the iva tax
     const ivaTaxAmount = ivaTax
