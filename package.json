@@ -11,7 +11,7 @@
     "compile": "rm -rf dist/ && tsc",
     "dev": "ROARR_LOG=true DEBUG=express-session nodemon --experimental-specifier-resolution=node ./src/index.ts",
     "start": "NODE_ENV=production  node --experimental-specifier-resolution=node ./dist/src/index.js",
-    "migrate": "ts-node --project tsconfig.migrations.json node_modules/node-pg-migrate/bin/node-pg-migrate",
+    "migrate": "node_modules/node-pg-migrate/bin/node-pg-migrate -j js",
     "lint": "eslint --ext .ts,.tsx .",
     "lint:fix": "eslint --ext .ts,.tsx . --fix",
     "prettier:check": "prettier --check ./src",

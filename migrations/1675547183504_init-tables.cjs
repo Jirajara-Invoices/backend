@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-import { MigrationBuilder, ColumnDefinitions, PgLiteral } from "node-pg-migrate";
+/* eslint-disable no-undef */
+const migrations = require("node-pg-migrate");
 
-export const shorthands: ColumnDefinitions | undefined = {
+exports.shorthands = {
   id: {
     type: "varchar(40)",
     notNull: true,
@@ -10,12 +10,12 @@ export const shorthands: ColumnDefinitions | undefined = {
   created_at: {
     type: "timestamp with time zone",
     notNull: true,
-    default: new PgLiteral("current_timestamp"),
+    default: new migrations.PgLiteral("current_timestamp"),
   },
   updated_at: {
     type: "timestamp with time zone",
     notNull: true,
-    default: new PgLiteral("current_timestamp"),
+    default: new migrations.PgLiteral("current_timestamp"),
   },
   deleted_at: {
     type: "timestamp with time zone",
@@ -23,7 +23,7 @@ export const shorthands: ColumnDefinitions | undefined = {
   },
 };
 
-export async function up(pgm: MigrationBuilder): Promise<void> {
+exports.up = (pgm) => {
   pgm.createType("user_role", ["admin", "user"]);
   pgm.createTable("users", {
     id: "id",
@@ -122,34 +122,10 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     updated_at: "updated_at",
     deleted_at: "deleted_at",
   });
+};
 
-  pgm.createType("invoice_item_type", ["product", "service", "discount", "shipping", "tax"]);
-  pgm.createTable("invoice_items", {
-    id: "id",
-    invoice_id: {
-      type: "varchar(40)",
-      notNull: true,
-      references: '"invoices"',
-      onDelete: "CASCADE",
-    },
-    tax_id: {
-      type: "varchar(40)",
-      notNull: false,
-      references: '"taxes"',
-      onDelete: "RESTRICT",
-    },
-    type: { type: "invoice_item_type", notNull: true, default: "product" },
-    name: { type: "varchar(255)", notNull: true },
-    description: { type: "varchar(255)", notNull: false },
-    quantity: { type: "integer", notNull: true },
-    price: { type: "numeric(15,5)", notNull: true },
-    created_at: "created_at",
-    updated_at: "updated_at",
-    deleted_at: "deleted_at",
-  });
-}
-
-export async function down(pgm: MigrationBuilder): Promise<void> {
+// eslint-disable-next-line no-undef
+exports.down = (pgm) => {
   pgm.dropTable("invoice_items");
   pgm.dropType("invoice_item_type");
 
@@ -165,4 +141,4 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
 
   pgm.dropTable("users");
   pgm.dropType("user_role");
-}
+};
